@@ -1,0 +1,48 @@
+canvas { 
+	background-color: #f2f0f0;
+	margin: 0px 10px;
+}
+
+html, body { 
+	margin: 0; 
+}
+
+.green {
+
+}
+
+.menu {
+	margin: 10px 10px;
+	vertical-align: top;
+}
+
+.menu-button {
+	background-color:#768d87;
+	border-radius:5px;
+	border: 0px;
+	display:inline-block;
+	cursor:pointer;
+	color:#ffffff;
+	font-family:Arial;
+	font-size:10px;
+	font-weight:bold;
+	padding:8px 16px;
+	text-decoration:none;
+}
+.menu-button:hover {
+	background-color:#6c7c7c;
+}
+.menu-button:active {
+	position:relative;
+	top:1px;
+}
+
+.menu-label {
+	color:#d96448;
+	font-family:Arial;
+	font-size:10px;
+	font-weight:bold;
+	text-decoration:none;
+	display:inline-block;
+}
+
