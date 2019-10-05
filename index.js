@@ -1,4 +1,4 @@
-import { GeneratingLine, Strip } from './src/generating_line';
+import { GeneratingLine, GeneratingStrip } from './src/generating';
 import Vector from './src/vector';
 
 // Running:
@@ -60,9 +60,8 @@ function addPoint(e) {
 function drawCanvas() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
-	let strip = new Strip(generatingLine, 10.0);
-	strip.draw(ctx);
-
+	let generatingStrip = new GeneratingStrip(generatingLine, 10.0);
+	generatingStrip.draw(ctx);
 	generatingLine.draw(ctx);
 }
 

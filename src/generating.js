@@ -46,7 +46,7 @@ export class GeneratingLine {
 	}
 }
 
-export class Strip {
+export class GeneratingStrip {
 	constructor(generatingLine, stripWidth) {
 		this.generatingLine = generatingLine;
 		this.stripWidth = stripWidth;
