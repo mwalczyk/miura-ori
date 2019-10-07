@@ -1,5 +1,18 @@
 import Vector from './vector'
 
+function lerpColor(a, b, amount) { 
+
+    var ah = parseInt(a.replace(/#/g, ''), 16),
+        ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+        bh = parseInt(b.replace(/#/g, ''), 16),
+        br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+        rr = ar + amount * (br - ar),
+        rg = ag + amount * (bg - ag),
+        rb = ab + amount * (bb - ab);
+
+    return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+}
+
 export class GeneratingLine {
 	constructor() {
 		this.points = [];
@@ -37,7 +50,7 @@ export class GeneratingLine {
 					pointB.draw(ctx);
 
 					const spacing = 4;
-					ctx.font = "10px Arial";
+					ctx.font = "normal 10px Arial";
 					ctx.fillStyle = '#344054';
 					ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y); 
 					ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y); 
@@ -81,12 +94,11 @@ export class GeneratingStrip {
 
 	getPointsOrthogonalTo(pointA, pointB) {
 		// A vector that points from `pointA` towards `pointB`
-		let direct = pointB.subtract(pointA);
-		direct.normalize();
+		let direct = pointB.subtract(pointA).normalize();
 
 		// A vector orthogonal to `direct`
 		let ortho = new Vector(direct.y, -direct.x, 0.0);
-		ortho.normalize(); 
+		ortho = ortho.normalize(); 
 
 		// Keep the "handedness" of the line: `ortho` will always
 		// be pointing "left" from `direct`
@@ -152,7 +164,6 @@ export class GeneratingStrip {
 
 	drawAngles(ctx) {
 
-		ctx.strokeStyle = '#c9a234';
 		ctx.setLineDash([]);
 
 		const xAxis = new Vector(1.0, 0.0, 0.0);
@@ -163,17 +174,43 @@ export class GeneratingStrip {
 			const pointB = this.generatingLine.points[i + 0];
 			const pointC = this.generatingLine.points[i + 1];
 
-			const toAfromB = pointA.subtract(pointB);
-			const toCfromB = pointC.subtract(pointB);
+			const toAfromB = pointA.subtract(pointB).normalize();
+			const toCfromB = pointC.subtract(pointB).normalize();
 
-			toAfromB.normalize();
-			toCfromB.normalize();
+			let startTheta = Math.atan2(toAfromB.y, toAfromB.x);
+			let endTheta = Math.atan2(toCfromB.y, toCfromB.x);
 
-			let startAngle = Math.atan2(toCfromB.y, toCfromB.x);
-			let endAngle = Math.atan2(toAfromB.y, toAfromB.x);
+			function remap(x) {
+				return (x + 2.0 * Math.PI) % (2.0 * Math.PI);
+			}
+			function toDegrees(x) {
+				return x * (180.0 / Math.PI);
+			}
 
+			// The angle between the two vectors
+			let between = Math.acos(toAfromB.dot(toCfromB));
+			if (toAfromB.cross(toCfromB).z < 0.0) {
+				console.log('dasdasdasdas');
+				between = 2.0 * Math.PI - between;
+			}
+
+			let bisector = toAfromB.bisector(toCfromB).normalize();
+			bisector = bisector.multiplyScalar(30.0);		
+
+			const lerpedColor = lerpColor('#e3cc39', '#bf3054', between / Math.PI);
+
+			const unicodeDeg = String.fromCharCode(176);
+			const spacing = 30;
+			ctx.font = "bold 12px Courier New";
+			ctx.fillStyle = lerpedColor;
+			ctx.fillText(`${Math.trunc(toDegrees(between)).toString()}${unicodeDeg}`, pointB.x + bisector.x, pointB.y + bisector.y);
+
+			ctx.strokeStyle = lerpedColor;
 			ctx.beginPath();
-			ctx.arc(pointB.x, pointB.y, 30.0, endAngle, startAngle);
+			ctx.arc(pointB.x, pointB.y, 18.0, remap(startTheta), remap(endTheta));
+			ctx.stroke();
+			ctx.beginPath();
+			ctx.arc(pointB.x, pointB.y, 20.0, remap(startTheta), remap(endTheta));
 			ctx.stroke();
 		}
 	}

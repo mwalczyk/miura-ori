@@ -38,9 +38,11 @@ export default class Vector {
 
 	normalize() {
 		let l = this.length();
-		this.x /= l;
-		this.y /= l;
-		this.z /= l;
+		return this.divideScalar(l);
+	}
+
+	bisector(other) {
+		return this.multiplyScalar(other.length()).add(other.multiplyScalar(this.length()))
 	}
 
 	print() {
@@ -49,7 +51,7 @@ export default class Vector {
 
 	draw(ctx) {
 		ctx.beginPath();
-	    ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI, false);
+	    ctx.arc(this.x, this.y, 2, 0, 2 * Math.PI, false);
 	    ctx.fill();
 	}
 }

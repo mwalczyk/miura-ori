@@ -38,10 +38,10 @@ html, body {
 }
 
 .menu-label {
-	color:#d96448;
+	color:#bab5b5;
 	font-family:Arial;
 	font-size:10px;
-	font-weight:bold;
+	font-weight:normal;
 	text-decoration:none;
 	display:inline-block;
 }

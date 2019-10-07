@@ -1,7 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 
-var _generating_line = require("./src/generating_line");
+var _generating = require("./src/generating");
 
 var _vector = _interopRequireDefault(require("./src/vector"));
 
@@ -43,7 +43,7 @@ function resize() {
   canvas.height = window.innerHeight;
 }
 
-var generatingLine = new _generating_line.GeneratingLine();
+var generatingLine = new _generating.GeneratingLine();
 
 function clearCanvas(e) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -58,18 +58,18 @@ function addPoint(e) {
 
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  var strip = new _generating_line.Strip(generatingLine, 10.0);
-  strip.draw(ctx);
+  var generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0);
+  generatingStrip.draw(ctx);
   generatingLine.draw(ctx);
 }
 
-},{"./src/generating_line":2,"./src/vector":3}],2:[function(require,module,exports){
+},{"./src/generating":2,"./src/vector":3}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Strip = exports.GeneratingLine = void 0;
+exports.GeneratingStrip = exports.GeneratingLine = void 0;
 
 var _vector = _interopRequireDefault(require("./vector"));
 
@@ -88,6 +88,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function lerpColor(a, b, amount) {
+  var ah = parseInt(a.replace(/#/g, ''), 16),
+      ar = ah >> 16,
+      ag = ah >> 8 & 0xff,
+      ab = ah & 0xff,
+      bh = parseInt(b.replace(/#/g, ''), 16),
+      br = bh >> 16,
+      bg = bh >> 8 & 0xff,
+      bb = bh & 0xff,
+      rr = ar + amount * (br - ar),
+      rg = ag + amount * (bg - ag),
+      rb = ab + amount * (bb - ab);
+  return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+}
 
 var GeneratingLine =
 /*#__PURE__*/
@@ -131,7 +146,7 @@ function () {
           pointA.draw(ctx);
           pointB.draw(ctx);
           var spacing = 4;
-          ctx.font = "10px Arial";
+          ctx.font = "normal 10px Arial";
           ctx.fillStyle = '#344054';
           ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
           ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
@@ -145,11 +160,11 @@ function () {
 
 exports.GeneratingLine = GeneratingLine;
 
-var Strip =
+var GeneratingStrip =
 /*#__PURE__*/
 function () {
-  function Strip(generatingLine, stripWidth) {
-    _classCallCheck(this, Strip);
+  function GeneratingStrip(generatingLine, stripWidth) {
+    _classCallCheck(this, GeneratingStrip);
 
     this.generatingLine = generatingLine;
     this.stripWidth = stripWidth;
@@ -163,7 +178,7 @@ function () {
     */
 
 
-  _createClass(Strip, [{
+  _createClass(GeneratingStrip, [{
     key: "slope",
     value: function slope(pointA, pointB) {
       var num = pointB.y - pointA.y;
@@ -187,11 +202,10 @@ function () {
     key: "getPointsOrthogonalTo",
     value: function getPointsOrthogonalTo(pointA, pointB) {
       // A vector that points from `pointA` towards `pointB`
-      var direct = pointB.subtract(pointA);
-      direct.normalize(); // A vector orthogonal to `direct`
+      var direct = pointB.subtract(pointA).normalize(); // A vector orthogonal to `direct`
 
       var ortho = new _vector["default"](direct.y, -direct.x, 0.0);
-      ortho.normalize(); // Keep the "handedness" of the line: `ortho` will always
+      ortho = ortho.normalize(); // Keep the "handedness" of the line: `ortho` will always
       // be pointing "left" from `direct`
 
       if (direct.cross(ortho).z < 0.0) {
@@ -268,23 +282,48 @@ function () {
   }, {
     key: "drawAngles",
     value: function drawAngles(ctx) {
-      ctx.strokeStyle = '#c9a234';
       ctx.setLineDash([]);
       var xAxis = new _vector["default"](1.0, 0.0, 0.0);
 
       for (var i = 1; i < this.generatingLine.length() - 1; i++) {
+        var remap = function remap(x) {
+          return (x + 2.0 * Math.PI) % (2.0 * Math.PI);
+        };
+
+        var toDegrees = function toDegrees(x) {
+          return x * (180.0 / Math.PI);
+        }; // The angle between the two vectors
+
+
         // Grab a point and its immediate neighbor along the path
         var pointA = this.generatingLine.points[i - 1];
         var pointB = this.generatingLine.points[i + 0];
         var pointC = this.generatingLine.points[i + 1];
-        var toAfromB = pointA.subtract(pointB);
-        var toCfromB = pointC.subtract(pointB);
-        toAfromB.normalize();
-        toCfromB.normalize();
-        var startAngle = Math.atan2(toCfromB.y, toCfromB.x);
-        var endAngle = Math.atan2(toAfromB.y, toAfromB.x);
+        var toAfromB = pointA.subtract(pointB).normalize();
+        var toCfromB = pointC.subtract(pointB).normalize();
+        var startTheta = Math.atan2(toAfromB.y, toAfromB.x);
+        var endTheta = Math.atan2(toCfromB.y, toCfromB.x);
+        var between = Math.acos(toAfromB.dot(toCfromB));
+
+        if (toAfromB.cross(toCfromB).z < 0.0) {
+          console.log('dasdasdasdas');
+          between = 2.0 * Math.PI - between;
+        }
+
+        var bisector = toAfromB.bisector(toCfromB).normalize();
+        bisector = bisector.multiplyScalar(30.0);
+        var lerpedColor = lerpColor('#e3cc39', '#bf3054', between / Math.PI);
+        var unicodeDeg = String.fromCharCode(176);
+        var spacing = 30;
+        ctx.font = "bold 12px Courier New";
+        ctx.fillStyle = lerpedColor;
+        ctx.fillText("".concat(Math.trunc(toDegrees(between)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y);
+        ctx.strokeStyle = lerpedColor;
         ctx.beginPath();
-        ctx.arc(pointB.x, pointB.y, 30.0, endAngle, startAngle);
+        ctx.arc(pointB.x, pointB.y, 18.0, remap(startTheta), remap(endTheta));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(pointB.x, pointB.y, 20.0, remap(startTheta), remap(endTheta));
         ctx.stroke();
       }
     }
@@ -389,10 +428,10 @@ function () {
     }
   }]);
 
-  return Strip;
+  return GeneratingStrip;
 }();
 
-exports.Strip = Strip;
+exports.GeneratingStrip = GeneratingStrip;
 
 },{"./vector":3}],3:[function(require,module,exports){
 "use strict";
@@ -461,9 +500,12 @@ function () {
     key: "normalize",
     value: function normalize() {
       var l = this.length();
-      this.x /= l;
-      this.y /= l;
-      this.z /= l;
+      return this.divideScalar(l);
+    }
+  }, {
+    key: "bisector",
+    value: function bisector(other) {
+      return this.multiplyScalar(other.length()).add(other.multiplyScalar(this.length()));
     }
   }, {
     key: "print",
@@ -474,7 +516,7 @@ function () {
     key: "draw",
     value: function draw(ctx) {
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI, false);
+      ctx.arc(this.x, this.y, 2, 0, 2 * Math.PI, false);
       ctx.fill();
     }
   }]);
