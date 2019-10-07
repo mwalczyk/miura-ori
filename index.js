@@ -60,8 +60,11 @@ function addPoint(e) {
 function drawCanvas() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
-	let generatingStrip = new GeneratingStrip(generatingLine, 10.0);
-	generatingStrip.draw(ctx);
+	if (generatingLine.length() > 1) {
+		let generatingStrip = new GeneratingStrip(generatingLine, 10.0);
+		generatingStrip.draw(ctx);
+	}
+
 	generatingLine.draw(ctx);
 }
 

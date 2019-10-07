@@ -5,6 +5,18 @@ export default class Vector {
 		this.z = z;
 	}
 
+	static xAxis() {
+		return new Vector(1.0, 0.0, 0.0);
+	}
+
+	static yAxis() {
+		return new Vector(0.0, 1.0, 0.0);
+	}
+
+	static zAxis() {
+		return new Vector(0.0, 0.0, 1.0);
+	}
+
 	add(other) {
 		return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
 	}
@@ -39,6 +51,22 @@ export default class Vector {
 	normalize() {
 		let l = this.length();
 		return this.divideScalar(l);
+	}
+
+	signedAngle(other) {
+		// Make sure the vector is normalized
+		const normalized = this.normalize();
+
+		// Find the angle between `this` and `other`
+		let angle = Math.acos(normalized.dot(other));
+		const cross = normalized.cross(other)
+
+		// Potentially reverse the angle
+		if (Vector.zAxis().dot(cross) > 0.0) {
+			angle = -angle;
+		}
+
+		return angle;
 	}
 
 	bisector(other) {

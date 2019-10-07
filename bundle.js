@@ -58,12 +58,16 @@ function addPoint(e) {
 
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  var generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0);
-  generatingStrip.draw(ctx);
+
+  if (generatingLine.length() > 1) {
+    var generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0);
+    generatingStrip.draw(ctx);
+  }
+
   generatingLine.draw(ctx);
 }
 
-},{"./src/generating":2,"./src/vector":3}],2:[function(require,module,exports){
+},{"./src/generating":2,"./src/vector":5}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -72,6 +76,14 @@ Object.defineProperty(exports, "__esModule", {
 exports.GeneratingStrip = exports.GeneratingLine = void 0;
 
 var _vector = _interopRequireDefault(require("./vector"));
+
+var _matrix = _interopRequireDefault(require("./matrix"));
+
+var utils = _interopRequireWildcard(require("./utils"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; if (obj != null) { var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
@@ -88,21 +100,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function lerpColor(a, b, amount) {
-  var ah = parseInt(a.replace(/#/g, ''), 16),
-      ar = ah >> 16,
-      ag = ah >> 8 & 0xff,
-      ab = ah & 0xff,
-      bh = parseInt(b.replace(/#/g, ''), 16),
-      br = bh >> 16,
-      bg = bh >> 8 & 0xff,
-      bb = bh & 0xff,
-      rr = ar + amount * (br - ar),
-      rg = ag + amount * (bg - ag),
-      rb = ab + amount * (bb - ab);
-  return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
-}
 
 var GeneratingLine =
 /*#__PURE__*/
@@ -169,6 +166,7 @@ function () {
     this.generatingLine = generatingLine;
     this.stripWidth = stripWidth;
     this.build();
+    this.generateCreasePattern();
   }
   /** 
    * Calculates the slope of the line between two points.
@@ -283,59 +281,105 @@ function () {
     key: "drawAngles",
     value: function drawAngles(ctx) {
       ctx.setLineDash([]);
-      var xAxis = new _vector["default"](1.0, 0.0, 0.0);
 
       for (var i = 1; i < this.generatingLine.length() - 1; i++) {
-        var remap = function remap(x) {
-          return (x + 2.0 * Math.PI) % (2.0 * Math.PI);
-        };
-
-        var toDegrees = function toDegrees(x) {
-          return x * (180.0 / Math.PI);
-        }; // The angle between the two vectors
-
-
         // Grab a point and its immediate neighbor along the path
         var pointA = this.generatingLine.points[i - 1];
         var pointB = this.generatingLine.points[i + 0];
         var pointC = this.generatingLine.points[i + 1];
         var toAfromB = pointA.subtract(pointB).normalize();
         var toCfromB = pointC.subtract(pointB).normalize();
-        var startTheta = Math.atan2(toAfromB.y, toAfromB.x);
-        var endTheta = Math.atan2(toCfromB.y, toCfromB.x);
+        var startTheta = utils.atan2Wrapped(toAfromB.y, toAfromB.x);
+        var endTheta = utils.atan2Wrapped(toCfromB.y, toCfromB.x); // The angle between the two vectors
+
         var between = Math.acos(toAfromB.dot(toCfromB));
 
         if (toAfromB.cross(toCfromB).z < 0.0) {
-          console.log('dasdasdasdas');
           between = 2.0 * Math.PI - between;
         }
 
-        var bisector = toAfromB.bisector(toCfromB).normalize();
-        bisector = bisector.multiplyScalar(30.0);
-        var lerpedColor = lerpColor('#e3cc39', '#bf3054', between / Math.PI);
+        var bisector = toAfromB.bisector(toCfromB).normalize().multiplyScalar(30.0);
+        var lerpedColor = utils.lerpColor('#e3cc39', '#bf3054', between / (2.0 * Math.PI));
         var unicodeDeg = String.fromCharCode(176);
         var spacing = 30;
         ctx.font = "bold 12px Courier New";
         ctx.fillStyle = lerpedColor;
-        ctx.fillText("".concat(Math.trunc(toDegrees(between)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y);
+        ctx.fillText("".concat(Math.trunc(utils.toDegrees(between)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y);
         ctx.strokeStyle = lerpedColor;
         ctx.beginPath();
-        ctx.arc(pointB.x, pointB.y, 18.0, remap(startTheta), remap(endTheta));
+        ctx.arc(pointB.x, pointB.y, 18.0, startTheta, endTheta);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(pointB.x, pointB.y, 20.0, remap(startTheta), remap(endTheta));
+        ctx.arc(pointB.x, pointB.y, 20.0, startTheta, endTheta);
         ctx.stroke();
+      }
+    }
+  }, {
+    key: "drawCreasePattern",
+    value: function drawCreasePattern(ctx) {
+      var offset = this.stripWidth;
+
+      var _utils$boundingBox = utils.boundingBox(this.vertices),
+          _utils$boundingBox2 = _slicedToArray(_utils$boundingBox, 4),
+          minX = _utils$boundingBox2[0],
+          maxX = _utils$boundingBox2[1],
+          minY = _utils$boundingBox2[2],
+          maxY = _utils$boundingBox2[3];
+
+      var currentWidth = maxX - minX;
+      var desiredWidth = 600.0 - this.stripWidth * 2.0;
+      var scale = desiredWidth / currentWidth;
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.faces.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var _step$value = _slicedToArray(_step.value, 2),
+              index = _step$value[0],
+              face = _step$value[1];
+
+          var _face = _slicedToArray(face, 4),
+              a = _face[0],
+              b = _face[1],
+              c = _face[2],
+              d = _face[3];
+
+          ctx.strokeStyle = "#f2f0f0"; // Same as the canvas background color
+
+          ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', index / this.faces.length);
+          ctx.beginPath();
+          ctx.moveTo(this.vertices[a].x * scale + offset, this.vertices[a].y + offset * 3.0);
+          ctx.lineTo(this.vertices[b].x * scale + offset, this.vertices[b].y + offset * 3.0);
+          ctx.lineTo(this.vertices[c].x * scale + offset, this.vertices[c].y + offset * 3.0);
+          ctx.lineTo(this.vertices[d].x * scale + offset, this.vertices[d].y + offset * 3.0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+            _iterator["return"]();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
       }
     }
   }, {
     key: "draw",
     value: function draw(ctx) {
-      if (this.generatingLine.length() > 1) {
-        this.drawPolygons(ctx);
-        this.drawInfiniteLines(ctx);
-        this.drawIntersections(ctx);
-        this.drawAngles(ctx);
-      }
+      this.drawPolygons(ctx);
+      this.drawInfiniteLines(ctx);
+      this.drawIntersections(ctx);
+      this.drawAngles(ctx);
+      this.drawCreasePattern(ctx);
     }
   }, {
     key: "build",
@@ -426,6 +470,102 @@ function () {
         this.polygons.push([a, _b, c, d]);
       }
     }
+  }, {
+    key: "rearrangePolygon",
+    value: function rearrangePolygon(a, b, c, d, curr_offset, flip, last) {
+      var _this2 = this;
+
+      // This function assumes an ordering:
+      // 0-----3
+      // |     |
+      // |     |
+      // 1-----2
+      // Gather points
+      var all_pts = [this.intersections[a], this.intersections[b], this.intersections[c], this.intersections[d]]; // A direction vector that runs parallel to this polygon's bottom edge
+
+      var bottom_edge = all_pts[2].subtract(all_pts[1]); // Rotate the bottom edge to be aligned with the x-axis
+
+      var theta = bottom_edge.signedAngle(_vector["default"].xAxis());
+
+      var rotationMatrix = _matrix["default"].rotationZ(-theta);
+
+      var rotated_pts = [];
+      all_pts.forEach(function (pt) {
+        // Rotate around the top-left corner of the polygon (the first point)
+        var rot = pt.subtract(all_pts[0]);
+        rot = rotationMatrix.multiply(rot);
+
+        if (flip) {
+          // Flip across the x-axis and move down by the strip width
+          rot.y = -rot.y;
+          rot.y -= _this2.stripWidth * 2.0;
+        }
+
+        rotated_pts.push(rot);
+      }); // Top right corner
+
+      var offset = rotated_pts[2].x; // If this is the last polygon to be added, add all 4 points, otherwise only 
+      // add the first two: we do this to avoid adding the same vertices multiple times
+
+      if (last) {
+        rotated_pts.forEach(function (pt) {
+          _this2.vertices.push(pt.add(new _vector["default"](curr_offset, 0.0, 0.0)));
+        });
+      } else {
+        for (var i = 0; i < 2; i++) {
+          this.vertices.push(rotated_pts[i].add(new _vector["default"](curr_offset, 0.0, 0.0)));
+        }
+      }
+
+      return offset;
+    }
+  }, {
+    key: "generateCreasePattern",
+    value: function generateCreasePattern() {
+      this.vertices = [];
+      this.edges = [];
+      this.faces = [];
+      this.assignments = [];
+      var cumulativeOffset = 0.0;
+      var flip = false;
+      var numberOfPolygons = this.intersections.length / 2;
+
+      for (var i = 0; i < numberOfPolygons - 1; i++) {
+        // The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
+        var start = i * 2; // Whether or not this is the last polygon in the strip
+
+        var last = i == numberOfPolygons - 2;
+        var offset = this.rearrangePolygon(start + 0, start + 1, start + 2, start + 3, cumulativeOffset, flip, last);
+        cumulativeOffset += offset; // The next polygon will need to be flipped, etc.
+
+        flip = !flip;
+      } // Construct faces
+
+
+      for (var _i4 = 0; _i4 < numberOfPolygons - 1; _i4++) {
+        // The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
+        var _start = _i4 * 2; // Was this polygon flipped?
+        // 
+        // Face vertices are assumed to have been added in the following order:
+        // 
+        // 0--------3    1-----2
+        // |       /     |      \ <-- Faces that were flipped are like this, instead
+        // |      /      |       \
+        // 1-----2       0--------3
+        //
+        // So, reorient the flipped polygons here, ensuring the same CCW
+        // winding order <ul, ll, lr, ur>
+
+
+        if (_i4 % 2 != 0) {
+          var indices = [_start + 1, _start + 0, _start + 3, _start + 2];
+          this.faces.push(indices);
+        } else {
+          var _indices = [_start + 0, _start + 1, _start + 2, _start + 3];
+          this.faces.push(_indices);
+        }
+      }
+    }
   }]);
 
   return GeneratingStrip;
@@ -433,7 +573,134 @@ function () {
 
 exports.GeneratingStrip = GeneratingStrip;
 
-},{"./vector":3}],3:[function(require,module,exports){
+},{"./matrix":3,"./utils":4,"./vector":5}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = void 0;
+
+var _vector = _interopRequireDefault(require("./vector"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Matrix =
+/*#__PURE__*/
+function () {
+  function Matrix(columnA, columnB, columnC) {
+    _classCallCheck(this, Matrix);
+
+    this.columnA = columnA;
+    this.columnB = columnB;
+    this.columnC = columnC;
+  }
+
+  _createClass(Matrix, [{
+    key: "multiply",
+    value: function multiply(vec) {
+      var x = this.columnA.x * vec.x + this.columnB.x * vec.y + this.columnC.x * vec.z;
+      var y = this.columnA.y * vec.x + this.columnB.y * vec.y + this.columnC.y * vec.z;
+      var z = this.columnA.z * vec.x + this.columnB.z * vec.y + this.columnC.z * vec.z;
+      return new _vector["default"](x, y, z);
+    }
+  }, {
+    key: "print",
+    value: function print() {}
+  }], [{
+    key: "identity",
+    value: function identity() {
+      return new Matrix(_vector["default"].xAxis(), _vector["default"].yAxis(), _vector["default"].zAxis());
+    }
+  }, {
+    key: "rotationX",
+    value: function rotationX(theta) {
+      var c = Math.cos(theta);
+      var s = Math.sin(theta);
+      return new Matrix(new _vector["default"](1.0, 0.0, 0.0), new _vector["default"](0.0, c, s), new _vector["default"](0.0, -s, c));
+    }
+  }, {
+    key: "rotationY",
+    value: function rotationY(theta) {
+      var c = Math.cos(theta);
+      var s = Math.sin(theta);
+      return new Matrix(new _vector["default"](c, 0.0, -s), new _vector["default"](0.0, 1.0, 0.0), new _vector["default"](s, 0.0, c));
+    }
+  }, {
+    key: "rotationZ",
+    value: function rotationZ(theta) {
+      var c = Math.cos(theta);
+      var s = Math.sin(theta);
+      return new Matrix(new _vector["default"](c, s, 0.0), new _vector["default"](-s, c, 0.0), new _vector["default"](0.0, 0.0, 1.0));
+    }
+  }]);
+
+  return Matrix;
+}();
+
+exports["default"] = Matrix;
+
+},{"./vector":5}],4:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.boundingBox = boundingBox;
+exports.atan2Wrapped = atan2Wrapped;
+exports.toDegrees = toDegrees;
+exports.toRadians = toRadians;
+exports.lerpColor = lerpColor;
+
+function boundingBox(vectors) {
+  var minX = 0.0;
+  var maxX = 0.0;
+  var minY = 0.0;
+  var maxY = 0.0;
+  vectors.forEach(function (vector) {
+    if (vector.x < minX) minX = vector.x;
+    if (vector.x > maxX) maxX = vector.x;
+    if (vector.y < minY) minY = vector.y;
+    if (vector.y > maxY) maxY = vector.y;
+  });
+  return [minX, maxX, minY, maxY];
+}
+
+function atan2Wrapped(y, x) {
+  var intermediate = Math.atan2(y, x);
+  return (intermediate + 2.0 * Math.PI) % (2.0 * Math.PI);
+}
+
+function toDegrees(x) {
+  return x * (180.0 / Math.PI);
+}
+
+function toRadians(x) {
+  return x * (Math.PI / 180.0);
+}
+
+function lerpColor(a, b, amount) {
+  var ah = parseInt(a.replace(/#/g, ''), 16),
+      ar = ah >> 16,
+      ag = ah >> 8 & 0xff,
+      ab = ah & 0xff,
+      bh = parseInt(b.replace(/#/g, ''), 16),
+      br = bh >> 16,
+      bg = bh >> 8 & 0xff,
+      bb = bh & 0xff,
+      rr = ar + amount * (br - ar),
+      rg = ag + amount * (bg - ag),
+      rb = ab + amount * (bb - ab);
+  return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+}
+
+},{}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -503,6 +770,21 @@ function () {
       return this.divideScalar(l);
     }
   }, {
+    key: "signedAngle",
+    value: function signedAngle(other) {
+      // Make sure the vector is normalized
+      var normalized = this.normalize(); // Find the angle between `this` and `other`
+
+      var angle = Math.acos(normalized.dot(other));
+      var cross = normalized.cross(other); // Potentially reverse the angle
+
+      if (Vector.zAxis().dot(cross) > 0.0) {
+        angle = -angle;
+      }
+
+      return angle;
+    }
+  }, {
     key: "bisector",
     value: function bisector(other) {
       return this.multiplyScalar(other.length()).add(other.multiplyScalar(this.length()));
@@ -518,6 +800,21 @@ function () {
       ctx.beginPath();
       ctx.arc(this.x, this.y, 2, 0, 2 * Math.PI, false);
       ctx.fill();
+    }
+  }], [{
+    key: "xAxis",
+    value: function xAxis() {
+      return new Vector(1.0, 0.0, 0.0);
+    }
+  }, {
+    key: "yAxis",
+    value: function yAxis() {
+      return new Vector(0.0, 1.0, 0.0);
+    }
+  }, {
+    key: "zAxis",
+    value: function zAxis() {
+      return new Vector(0.0, 0.0, 1.0);
     }
   }]);
 
