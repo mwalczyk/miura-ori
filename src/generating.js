@@ -37,8 +37,8 @@ export class GeneratingLine {
 				ctx.stroke();
 
 				ctx.fillStyle = '#576d94';
-				pointA.draw(ctx);
-				pointB.draw(ctx);
+				pointA.draw(ctx, 2.0);
+				pointB.draw(ctx, 2.0);
 
 				const spacing = 4;
 				ctx.font = "normal 10px Arial";
@@ -112,13 +112,13 @@ export class GeneratingStrip {
 	drawIntersections(ctx) {
 		ctx.save();
 		ctx.fillStyle = '#d96448';
-		this.intersections.forEach((intersection) => intersection.draw(ctx));
+		this.intersections.forEach((intersection) => intersection.draw(ctx, 3.0));
 		ctx.restore();
 	}
 
 	drawPolygons(ctx) {
 		ctx.save();
-		ctx.fillStyle = utils.convertHex('#9ae3e2', 50.0);
+		ctx.fillStyle = utils.convertHex('#b5a6a5', 50.0);
 
 		this.polygons.forEach(([a, b, c, d]) => {
 			ctx.beginPath();
@@ -163,10 +163,18 @@ export class GeneratingStrip {
 			} else {
 				ctx.textAlign = 'left';
 			}
-			const unicodeDeg = String.fromCharCode(176);
+			const unicodeDegrees = String.fromCharCode(176);
+			const unicodeBlock = String.fromCharCode(9608);
 			ctx.font = "bold 12px Courier New";
+
+			const textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
+			const textBackground = unicodeBlock.repeat(textDegrees.length);
+
+			ctx.fillStyle = '#fcfafa';
+			ctx.fillText(textBackground, pointB.x + bisector.x, pointB.y + bisector.y);
+
 			ctx.fillStyle = lerpedColor;
-			ctx.fillText(`${Math.trunc(utils.toDegrees(foldAngle)).toString()}${unicodeDeg}`, pointB.x + bisector.x, pointB.y + bisector.y);
+			ctx.fillText(`${textDegrees}`, pointB.x + bisector.x, pointB.y + bisector.y);
 
 			// Draw outer / inner arcs with different radii
 			ctx.strokeStyle = lerpedColor;
@@ -186,11 +194,14 @@ export class GeneratingStrip {
 
 		// Shrink the CP down horizontally so that it fits on the canvas
 		let [minX, maxX, minY, maxY] = utils.boundingBox(this.vertices);
-		const currentWidth = maxX - minX;
-		const desiredWidth = document.getElementById('canvas-drawing').width - 2.0 * offset;
+		const currentW = maxX - minX;
+		const currentH = maxY - minY;
+		const desiredW = document.getElementById('canvas-crease-pattern').width - 2.0 * offset;
+		const desiredH = document.getElementById('canvas-crease-pattern').height - 2.0 * offset;
 
-		const scale = desiredWidth / currentWidth;
-
+		const scaleX = desiredW / currentW;
+		const scaleY = desiredH / currentH;
+		console.log(minY)
 		ctx.save();
 		for (let [index, face] of this.faces.entries()) {
 			let [a, b, c, d] = face;
@@ -200,10 +211,10 @@ export class GeneratingStrip {
 			ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', percent);
 
 			ctx.beginPath();
-			ctx.moveTo(this.vertices[a].x * scale + offset, this.vertices[a].y + offset * 3.0);
-			ctx.lineTo(this.vertices[b].x * scale + offset, this.vertices[b].y + offset * 3.0);
-			ctx.lineTo(this.vertices[c].x * scale + offset, this.vertices[c].y + offset * 3.0);
-			ctx.lineTo(this.vertices[d].x * scale + offset, this.vertices[d].y + offset * 3.0);
+			ctx.moveTo((this.vertices[a].x - minX) * scaleX + offset, (this.vertices[a].y - minY) * scaleY + offset);
+			ctx.lineTo((this.vertices[b].x - minX) * scaleX + offset, (this.vertices[b].y - minY) * scaleY + offset);
+			ctx.lineTo((this.vertices[c].x - minX) * scaleX + offset, (this.vertices[c].y - minY) * scaleY + offset);
+			ctx.lineTo((this.vertices[d].x - minX) * scaleX + offset, (this.vertices[d].y - minY) * scaleY + offset);
 			ctx.closePath();
 
 			// Draw both filled and stroked versions of the face
@@ -408,7 +419,7 @@ export class GeneratingStrip {
 		//    corresponds to the new, reflected face
 		// 5. Concatenate the newly generated list of faces with the pre-existing
 		//    list of faces
-		const numberOfRows = 8;
+		const numberOfRows = 12;
 		const numberOfReflections = numberOfRows - 1;
 
 		let facesCurrent = [...this.faces];

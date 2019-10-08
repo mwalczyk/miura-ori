@@ -164,8 +164,8 @@ function () {
         ctx.lineTo(pointB.x, pointB.y);
         ctx.stroke();
         ctx.fillStyle = '#576d94';
-        pointA.draw(ctx);
-        pointB.draw(ctx);
+        pointA.draw(ctx, 2.0);
+        pointB.draw(ctx, 2.0);
         var spacing = 4;
         ctx.font = "normal 10px Arial";
         ctx.fillStyle = '#344054';
@@ -253,7 +253,7 @@ function () {
       ctx.save();
       ctx.fillStyle = '#d96448';
       this.intersections.forEach(function (intersection) {
-        return intersection.draw(ctx);
+        return intersection.draw(ctx, 3.0);
       });
       ctx.restore();
     }
@@ -263,7 +263,7 @@ function () {
       var _this = this;
 
       ctx.save();
-      ctx.fillStyle = utils.convertHex('#9ae3e2', 50.0);
+      ctx.fillStyle = utils.convertHex('#b5a6a5', 50.0);
       this.polygons.forEach(function (_ref) {
         var _ref2 = _slicedToArray(_ref, 4),
             a = _ref2[0],
@@ -313,10 +313,15 @@ function () {
           ctx.textAlign = 'left';
         }
 
-        var unicodeDeg = String.fromCharCode(176);
+        var unicodeDegrees = String.fromCharCode(176);
+        var unicodeBlock = String.fromCharCode(9608);
         ctx.font = "bold 12px Courier New";
+        var textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
+        var textBackground = unicodeBlock.repeat(textDegrees.length);
+        ctx.fillStyle = '#fcfafa';
+        ctx.fillText(textBackground, pointB.x + bisector.x, pointB.y + bisector.y);
         ctx.fillStyle = lerpedColor;
-        ctx.fillText("".concat(Math.trunc(utils.toDegrees(foldAngle)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y); // Draw outer / inner arcs with different radii
+        ctx.fillText("".concat(textDegrees), pointB.x + bisector.x, pointB.y + bisector.y); // Draw outer / inner arcs with different radii
 
         ctx.strokeStyle = lerpedColor;
         ctx.beginPath();
@@ -341,9 +346,13 @@ function () {
           minY = _utils$boundingBox2[2],
           maxY = _utils$boundingBox2[3];
 
-      var currentWidth = maxX - minX;
-      var desiredWidth = document.getElementById('canvas-drawing').width - 2.0 * offset;
-      var scale = desiredWidth / currentWidth;
+      var currentW = maxX - minX;
+      var currentH = maxY - minY;
+      var desiredW = document.getElementById('canvas-crease-pattern').width - 2.0 * offset;
+      var desiredH = document.getElementById('canvas-crease-pattern').height - 2.0 * offset;
+      var scaleX = desiredW / currentW;
+      var scaleY = desiredH / currentH;
+      console.log(minY);
       ctx.save();
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
@@ -366,10 +375,10 @@ function () {
 
           ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', percent);
           ctx.beginPath();
-          ctx.moveTo(this.vertices[a].x * scale + offset, this.vertices[a].y + offset * 3.0);
-          ctx.lineTo(this.vertices[b].x * scale + offset, this.vertices[b].y + offset * 3.0);
-          ctx.lineTo(this.vertices[c].x * scale + offset, this.vertices[c].y + offset * 3.0);
-          ctx.lineTo(this.vertices[d].x * scale + offset, this.vertices[d].y + offset * 3.0);
+          ctx.moveTo((this.vertices[a].x - minX) * scaleX + offset, (this.vertices[a].y - minY) * scaleY + offset);
+          ctx.lineTo((this.vertices[b].x - minX) * scaleX + offset, (this.vertices[b].y - minY) * scaleY + offset);
+          ctx.lineTo((this.vertices[c].x - minX) * scaleX + offset, (this.vertices[c].y - minY) * scaleY + offset);
+          ctx.lineTo((this.vertices[d].x - minX) * scaleX + offset, (this.vertices[d].y - minY) * scaleY + offset);
           ctx.closePath(); // Draw both filled and stroked versions of the face
 
           ctx.fill();
@@ -598,7 +607,7 @@ function () {
       //    list of faces
 
 
-      var numberOfRows = 8;
+      var numberOfRows = 12;
       var numberOfReflections = numberOfRows - 1;
 
       var facesCurrent = _toConsumableArray(this.faces);
@@ -945,9 +954,9 @@ function () {
     }
   }, {
     key: "draw",
-    value: function draw(ctx) {
+    value: function draw(ctx, radius) {
       ctx.beginPath();
-      ctx.arc(this.x, this.y, 2, 0, 2 * Math.PI, false);
+      ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI, false);
       ctx.fill();
     }
   }], [{

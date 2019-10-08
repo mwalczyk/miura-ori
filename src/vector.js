@@ -81,9 +81,9 @@ export default class Vector {
 		console.log(`x: ${this.x}, y: ${this.y}, z: ${this.z}`);
 	}
 
-	draw(ctx) {
+	draw(ctx, radius) {
 		ctx.beginPath();
-	    ctx.arc(this.x, this.y, 2, 0, 2 * Math.PI, false);
-	    ctx.fill();
+	  ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI, false);
+	  ctx.fill();
 	}
 }
