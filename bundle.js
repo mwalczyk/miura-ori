@@ -1,6 +1,8 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 
+var _fileSaver = require("file-saver");
+
 var _generating = require("./src/generating");
 
 var _vector = _interopRequireDefault(require("./src/vector"));
@@ -8,77 +10,88 @@ var _vector = _interopRequireDefault(require("./src/vector"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 // Running:
+//
 // 1. Install prerequisites:
 // 		a. `npm install -g browserify` <-- used to package node modules
 //		b. `npm install -g watchify` <-- used to "watch" index.js for changes and auto re-compile
-//    c. `npm install -g babelify` <-- used to transpile ES6 to ES5 (like for imports/exports)
-// 2. Install required node modules locally: `npm install`
-// 3. Run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
-//
-// References:
-// 1. https://medium.com/jeremy-keeshin/hello-world-for-javascript-with-npm-modules-in-the-browser-6020f82d1072
-// 2. https://javascript.info/
-// 3. https://medium.com/@hey.aaron/getting-import-export-working-es6-style-using-browserify-babelify-gulp-5hrs-of-life-eca7786e44cc
-// 4. https://dev.to/washingtonsteven/playing-with-canvas-and-es6-classes
-// 5. http://egorsmirnov.me/2015/05/25/browserify-babelify-and-es6.html
-// 6. https://jsdoc.app/
+//    c. `npm install -g babelify` <-- used to transpile ES6 to ES5 (for imports/exports, etc.)
+//    d. `npm install --save-dev @babel/preset-env` <-- the preset needed for step (c)
+// 2. Install any other required node modules locally: `npm install`
+// 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
 // Create canvas element and append it to document body
 var divCanvas = document.getElementById('div-canvas');
 var canvasDrawing = document.createElement('canvas');
 canvasDrawing.setAttribute('id', 'canvas-drawing');
-canvasDrawing.setAttribute('class', 'canvas-upper');
+canvasDrawing.setAttribute('class', 'drawing-upper');
 canvasDrawing.width = 600;
 canvasDrawing.height = 600;
 var canvasCreasePattern = document.createElement('canvas');
 canvasCreasePattern.setAttribute('id', 'canvas-crease-pattern');
-canvasCreasePattern.setAttribute('class', 'canvas-lower');
+canvasCreasePattern.setAttribute('class', 'drawing-lower');
 canvasCreasePattern.width = 600;
 canvasCreasePattern.height = 180;
 divCanvas.appendChild(canvasDrawing);
-divCanvas.appendChild(canvasCreasePattern); // Grab the 2D rendering context
+divCanvas.appendChild(canvasCreasePattern); // Grab the 2D rendering contexts
 
 var ctxDrawing = canvasDrawing.getContext('2d');
 var ctxCreasePattern = canvasCreasePattern.getContext('2d'); // Grab references to DOM elements
 
 var buttonClear = document.getElementById('button-clear');
+var buttonSave = document.getElementById('button-save');
 var pNumberOfPoints = document.getElementById("p-number-of-points"); // Add event listeners
 
 canvasDrawing.addEventListener('mousedown', addPoint);
-buttonClear.addEventListener('click', clearCanvas);
+buttonClear.addEventListener('click', reset);
+buttonSave.addEventListener('click', save);
+var generatingLine = new _generating.GeneratingLine();
+var generatingStrip;
 
-function resize() {
-  // Make the canvas full-screen
-  canvasDrawing.width = window.innerWidth;
-  canvasDrawing.height = window.innerHeight;
+function save() {
+  var fold = generatingStrip.exportFoldData();
+  var file = new File([JSON.stringify(fold, null, 4)], 'miura.fold', {
+    type: "text/plain;charset=utf-8"
+  });
+  (0, _fileSaver.saveAs)(file); // canvasCreasePattern.toBlob(function(blob) {
+  //     saveAs(blob, 'crease_pattern.png');
+  // });
 }
 
-var generatingLine = new _generating.GeneratingLine();
-
-function clearCanvas(e) {
+function clearCanvas() {
   ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
   ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
+}
+
+function reset() {
+  clearCanvas();
   generatingLine.clear();
 }
 
 function addPoint(e) {
-  generatingLine.push(new _vector["default"](e.offsetX, e.offsetY, 0.0));
+  generatingLine.push(new _vector["default"](e.offsetX, e.offsetY, 0.0)); // Add some text information to the UI
+
   pNumberOfPoints.innerHTML = "Number of Points: ".concat(generatingLine.length().toString());
   drawCanvas();
 }
 
 function drawCanvas() {
-  ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
-  ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
+  clearCanvas(); // Only do this if there are at least 2 points to draw
 
   if (generatingLine.length() > 1) {
-    var generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0);
+    generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0, 8);
     generatingStrip.draw(ctxDrawing, ctxCreasePattern);
-  }
+  } // Always draw the line on top
+
 
   generatingLine.draw(ctxDrawing);
 }
 
-},{"./src/generating":2,"./src/vector":5}],2:[function(require,module,exports){
+},{"./src/generating":3,"./src/vector":6,"file-saver":2}],2:[function(require,module,exports){
+(function (global){
+(function(a,b){if("function"==typeof define&&define.amd)define([],b);else if("undefined"!=typeof exports)b();else{b(),a.FileSaver={exports:{}}.exports}})(this,function(){"use strict";function b(a,b){return"undefined"==typeof b?b={autoBom:!1}:"object"!=typeof b&&(console.warn("Deprecated: Expected third argument to be a object"),b={autoBom:!b}),b.autoBom&&/^\s*(?:text\/\S*|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(a.type)?new Blob(["\uFEFF",a],{type:a.type}):a}function c(b,c,d){var e=new XMLHttpRequest;e.open("GET",b),e.responseType="blob",e.onload=function(){a(e.response,c,d)},e.onerror=function(){console.error("could not download file")},e.send()}function d(a){var b=new XMLHttpRequest;b.open("HEAD",a,!1);try{b.send()}catch(a){}return 200<=b.status&&299>=b.status}function e(a){try{a.dispatchEvent(new MouseEvent("click"))}catch(c){var b=document.createEvent("MouseEvents");b.initMouseEvent("click",!0,!0,window,0,0,0,80,20,!1,!1,!1,!1,0,null),a.dispatchEvent(b)}}var f="object"==typeof window&&window.window===window?window:"object"==typeof self&&self.self===self?self:"object"==typeof global&&global.global===global?global:void 0,a=f.saveAs||("object"!=typeof window||window!==f?function(){}:"download"in HTMLAnchorElement.prototype?function(b,g,h){var i=f.URL||f.webkitURL,j=document.createElement("a");g=g||b.name||"download",j.download=g,j.rel="noopener","string"==typeof b?(j.href=b,j.origin===location.origin?e(j):d(j.href)?c(b,g,h):e(j,j.target="_blank")):(j.href=i.createObjectURL(b),setTimeout(function(){i.revokeObjectURL(j.href)},4E4),setTimeout(function(){e(j)},0))}:"msSaveOrOpenBlob"in navigator?function(f,g,h){if(g=g||f.name||"download","string"!=typeof f)navigator.msSaveOrOpenBlob(b(f,h),g);else if(d(f))c(f,g,h);else{var i=document.createElement("a");i.href=f,i.target="_blank",setTimeout(function(){e(i)})}}:function(a,b,d,e){if(e=e||open("","_blank"),e&&(e.document.title=e.document.body.innerText="downloading..."),"string"==typeof a)return c(a,b,d);var g="application/octet-stream"===a.type,h=/constructor/i.test(f.HTMLElement)||f.safari,i=/CriOS\/[\d]+/.test(navigator.userAgent);if((i||g&&h)&&"object"==typeof FileReader){var j=new FileReader;j.onloadend=function(){var a=j.result;a=i?a:a.replace(/^data:[^;]*;/,"data:attachment/file;"),e?e.location.href=a:location=a,e=null},j.readAsDataURL(a)}else{var k=f.URL||f.webkitURL,l=k.createObjectURL(a);e?e.location=l:location.href=l,e=null,setTimeout(function(){k.revokeObjectURL(l)},4E4)}});f.saveAs=a.saveAs=a,"undefined"!=typeof module&&(module.exports=a)});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -120,6 +133,32 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+var uiColors = {
+  generatingLine: {
+    line: '#948e8e',
+    point: '#576d94',
+    text: '#344054'
+  },
+  generatingStrip: {
+    line: '#bab5b5',
+    point: '#d96448',
+    polygon: utils.convertHex('#b5a6a5', 50.0),
+    textBackground: '#fcfafa',
+    angle: {
+      acute: '#bf3054',
+      obtuse: '#e3cc39'
+    }
+  },
+  creasePattern: {
+    fold: {
+      mountain: '#d96448',
+      valley: '#768d87',
+      facet: '#c9ad47',
+      border: '#bab5b5'
+    }
+  }
+};
+
 var GeneratingLine =
 /*#__PURE__*/
 function () {
@@ -158,17 +197,17 @@ function () {
       for (var i = 0; i < this.points.length - 1; i++) {
         var pointA = this.points[i + 0];
         var pointB = this.points[i + 1];
-        ctx.strokeStyle = '#948e8e';
+        ctx.strokeStyle = uiColors['generatingLine']['line'];
         ctx.beginPath();
         ctx.moveTo(pointA.x, pointA.y);
         ctx.lineTo(pointB.x, pointB.y);
         ctx.stroke();
-        ctx.fillStyle = '#576d94';
+        ctx.fillStyle = uiColors['generatingLine']['point'];
         pointA.draw(ctx, 2.0);
         pointB.draw(ctx, 2.0);
         var spacing = 4;
         ctx.font = "normal 10px Arial";
-        ctx.fillStyle = '#344054';
+        ctx.fillStyle = uiColors['generatingLine']['text'];
         ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
         ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
       }
@@ -185,11 +224,12 @@ exports.GeneratingLine = GeneratingLine;
 var GeneratingStrip =
 /*#__PURE__*/
 function () {
-  function GeneratingStrip(generatingLine, stripWidth) {
+  function GeneratingStrip(generatingLine, stripWidth, repeat) {
     _classCallCheck(this, GeneratingStrip);
 
     this.generatingLine = generatingLine;
     this.stripWidth = stripWidth;
+    this.repeat = repeat;
     this.generateStrip();
     this.generateCreasePattern();
   }
@@ -219,7 +259,7 @@ function () {
       // The length of the "infinite" line segment: this is kind of silly, but it works for now
       var drawLength = 2000.0;
       ctx.save();
-      ctx.strokeStyle = '#bab5b5';
+      ctx.strokeStyle = uiColors['generatingStrip']['line'];
       ctx.setLineDash([2, 2]);
 
       for (var i = 0; i < this.lineEquations.length; i++) {
@@ -251,7 +291,7 @@ function () {
     key: "drawIntersections",
     value: function drawIntersections(ctx) {
       ctx.save();
-      ctx.fillStyle = '#d96448';
+      ctx.fillStyle = uiColors['generatingStrip']['point'];
       this.intersections.forEach(function (intersection) {
         return intersection.draw(ctx, 3.0);
       });
@@ -263,7 +303,7 @@ function () {
       var _this = this;
 
       ctx.save();
-      ctx.fillStyle = utils.convertHex('#b5a6a5', 50.0);
+      ctx.fillStyle = uiColors['generatingStrip']['polygon'];
       this.polygons.forEach(function (_ref) {
         var _ref2 = _slicedToArray(_ref, 4),
             a = _ref2[0],
@@ -295,7 +335,7 @@ function () {
         var next = pointC.subtract(pointB).normalize(); // The actual *major* fold angle that will need to be made at this point along the strip
 
         var foldAngle = Math.acos(heading.dot(next));
-        var lerpedColor = utils.lerpColor('#bf3054', '#e3cc39', foldAngle / Math.PI);
+        var lerpedColor = utils.lerpColor(uiColors['generatingStrip']['angle']['acute'], uiColors['generatingStrip']['angle']['obtuse'], foldAngle / Math.PI);
         var startTheta = utils.atan2Wrapped(heading.y, heading.x);
         var endTheta = utils.atan2Wrapped(next.y, next.x); // Keep the same directionality as the path curves throughout space
 
@@ -307,18 +347,13 @@ function () {
 
         var bisector = heading.bisector(next).normalize().multiplyScalar(25.0); // Display the angle (in degrees) as text
 
-        if (bisector.x < 0.0) {
-          ctx.textAlign = 'right';
-        } else {
-          ctx.textAlign = 'left';
-        }
-
+        ctx.textAlign = bisector.x < 0.0 ? 'right' : 'left';
+        ctx.font = "bold 12px Courier New";
         var unicodeDegrees = String.fromCharCode(176);
         var unicodeBlock = String.fromCharCode(9608);
-        ctx.font = "bold 12px Courier New";
         var textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
         var textBackground = unicodeBlock.repeat(textDegrees.length);
-        ctx.fillStyle = '#fcfafa';
+        ctx.fillStyle = uiColors['generatingStrip']['textBackground'];
         ctx.fillText(textBackground, pointB.x + bisector.x, pointB.y + bisector.y);
         ctx.fillStyle = lerpedColor;
         ctx.fillText("".concat(textDegrees), pointB.x + bisector.x, pointB.y + bisector.y); // Draw outer / inner arcs with different radii
@@ -352,36 +387,43 @@ function () {
       var desiredH = document.getElementById('canvas-crease-pattern').height - 2.0 * offset;
       var scaleX = desiredW / currentW;
       var scaleY = desiredH / currentH;
-      console.log(minY);
       ctx.save();
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
 
       try {
-        for (var _iterator = this.faces.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        for (var _iterator = this.edges.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
           var _step$value = _slicedToArray(_step.value, 2),
               index = _step$value[0],
-              face = _step$value[1];
+              edge = _step$value[1];
 
-          var _face = _slicedToArray(face, 4),
-              a = _face[0],
-              b = _face[1],
-              c = _face[2],
-              d = _face[3];
+          var _edge = _slicedToArray(edge, 2),
+              a = _edge[0],
+              b = _edge[1]; //console.log(`i: ${index}, edge: ${edge} -> ${this.assignments[index]}`);
+          // Color (and stipple) the line based on this edge's assignment
 
-          var percent = index / this.faces.length;
-          ctx.strokeStyle = "#f2f0f0"; // Same as the canvas background color
 
-          ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', percent);
+          var assignment = this.assignments[index];
+
+          if (assignment === 'M') {
+            ctx.strokeStyle = uiColors['creasePattern']['fold']['mountain'];
+            ctx.setLineDash([]);
+          } else if (assignment === 'V') {
+            ctx.strokeStyle = uiColors['creasePattern']['fold']['valley'];
+            ctx.setLineDash([1, 2]);
+          } else if (assignment === 'F') {
+            ctx.strokeStyle = uiColors['creasePattern']['fold']['facet'];
+            ctx.setLineDash([]);
+          } else if (assignment === 'B') {
+            ctx.strokeStyle = uiColors['creasePattern']['fold']['border'];
+            ctx.setLineDash([]);
+          }
+
           ctx.beginPath();
           ctx.moveTo((this.vertices[a].x - minX) * scaleX + offset, (this.vertices[a].y - minY) * scaleY + offset);
           ctx.lineTo((this.vertices[b].x - minX) * scaleX + offset, (this.vertices[b].y - minY) * scaleY + offset);
-          ctx.lineTo((this.vertices[c].x - minX) * scaleX + offset, (this.vertices[c].y - minY) * scaleY + offset);
-          ctx.lineTo((this.vertices[d].x - minX) * scaleX + offset, (this.vertices[d].y - minY) * scaleY + offset);
-          ctx.closePath(); // Draw both filled and stroked versions of the face
-
-          ctx.fill();
+          ctx.closePath();
           ctx.stroke();
         }
       } catch (err) {
@@ -527,7 +569,7 @@ function () {
       var polygonPoints = [this.intersections[a], this.intersections[b], this.intersections[c], this.intersections[d]]; // A direction vector that runs parallel to this polygon's bottom edge
 
       var bottomEdge = polygonPoints[2].subtract(polygonPoints[1]);
-      var topLeftCorner = polygonPoints[0]; // Rotate the bottom edge to be aligned with the x-axis
+      var topLeftCorner = polygonPoints[0].copy(); // Rotate the bottom edge to be aligned with the x-axis
 
       var theta = bottomEdge.signedAngle(_vector["default"].xAxis());
 
@@ -563,7 +605,7 @@ function () {
       this.faces = [];
       this.assignments = [];
       var cumulativeOffset = 0.0;
-      var flip = false; // The total number of closed polygons that form the silhouette of this strip
+      var flip = true; // The total number of closed polygons that form the silhouette of this strip
 
       var numberOfPolygons = this.intersections.length / 2;
 
@@ -571,7 +613,7 @@ function () {
         // 2, 4, 6, 8, etc.
         var startIndex = i * 2; // Whether or not this is the last polygon in the strip
 
-        var last = i == numberOfPolygons - 2;
+        var last = i === numberOfPolygons - 2;
         var a = startIndex + 0,
             b = startIndex + 1,
             c = startIndex + 2,
@@ -607,8 +649,7 @@ function () {
       //    list of faces
 
 
-      var numberOfRows = 12;
-      var numberOfReflections = numberOfRows - 1;
+      var numberOfReflections = this.repeat - 1;
 
       var facesCurrent = _toConsumableArray(this.faces);
 
@@ -674,7 +715,151 @@ function () {
 
 
         facesCurrent = [].concat(facesNext);
+      } // Construct edges and assignments	
+      //
+      // The number of faces per (repeated) row of the pattern
+
+
+      var facesPerRow = this.faces.length / this.repeat;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.faces.entries()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var _step3$value = _slicedToArray(_step3.value, 2),
+              faceIndex = _step3$value[0],
+              face = _step3$value[1];
+
+          // Unpack the indices that form this face
+          var _face = _slicedToArray(face, 4),
+              a = _face[0],
+              b = _face[1],
+              c = _face[2],
+              d = _face[3]; // Now, circle around the face and add its edges, in order
+
+
+          for (var edgeIndex = 0; edgeIndex < face.length; edgeIndex++) {
+            var xAxis = _vector["default"].xAxis(); // Calculate two of the interior angles of this face
+
+
+            var rightEdgeDirection = this.vertices[d].subtract(this.vertices[c]).normalize();
+            var thetaInteriorRight = Math.abs(xAxis.angle(rightEdgeDirection));
+            var leftEdgeDirection = this.vertices[a].subtract(this.vertices[b]).normalize();
+            var thetaInteriorLeft = Math.abs(xAxis.angle(leftEdgeDirection)); // Calculate the "row" and "column" indices of this face within the "grid" of faces 
+            // that form the crease pattern
+
+            var _row = Math.floor(faceIndex / facesPerRow);
+
+            var col = faceIndex % facesPerRow; // Only do this for even-numbered rows
+
+            if (_row % 2 === 0) {
+              thetaInteriorLeft = Math.PI - thetaInteriorLeft;
+              thetaInteriorRight = Math.PI - thetaInteriorRight;
+            } // Is this face even or odd, along the horizontal axis?
+
+
+            var parity = col % 2 === 0; // Have we reached a face that contains a border edge?
+
+            var isLeftEnd = faceIndex % facesPerRow === 0;
+            var isRightEnd = faceIndex % facesPerRow === facesPerRow - 1;
+            var isTopEnd = _row === this.repeat - 1;
+            var isBottomEnd = _row === 0; // This variable will not be changed for border edges
+
+            var assignment = 'B';
+
+            if (edgeIndex === 3 && !isTopEnd) {
+              // Minor folds (horizontal) should alternate between M and V
+              // across the strip
+              if (_row % 2 === 0) {
+                // This is an odd row
+                assignment = parity ? 'M' : 'V';
+              } else {
+                assignment = parity ? 'V' : 'M';
+              }
+            } else if (edgeIndex === 1 && !isBottomEnd) {
+              // Minor folds (horizontal) should alternate between M and V
+              // across the strip
+              if (_row % 2 != 0) {
+                // This is an odd row
+                assignment = parity ? 'M' : 'V';
+              } else {
+                assignment = parity ? 'V' : 'M';
+              }
+            } else if (edgeIndex === 0 && !isLeftEnd) {
+              // Left edges that are not at the very start of the strip
+              if (thetaInteriorLeft < Math.PI * 0.5) {
+                // This is the side of the "bird's foot"
+                assignment = parity ? 'V' : 'M';
+              } else {
+                assignment = parity ? 'M' : 'V';
+              }
+            } else if (edgeIndex === 2 && !isRightEnd) {
+              // Right edges that are not at the very end of the strip
+              if (thetaInteriorRight < Math.PI * 0.5) {
+                // This is the side of the "bird's foot"
+                assignment = parity ? 'M' : 'V';
+              } else {
+                assignment = parity ? 'V' : 'M';
+              }
+            } // Add edge indices, modulo the number of indices in this face (4):
+            // 
+            // (0, 1)
+            // (1, 2)
+            // (2, 3)
+            // (3, 0) <-- This is where the modulo operator matters
+            //
+
+
+            var indexA = face[(edgeIndex + 0) % 4];
+            var indexB = face[(edgeIndex + 1) % 4];
+            var edgeIndices = [indexA, indexB]; // We are going to keep the edges sorted so that we can remove 
+            // duplicates later
+
+            edgeIndices.sort(function (a, b) {
+              return a - b;
+            });
+            this.edges.push(edgeIndices);
+            this.assignments.push(assignment);
+          }
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+            _iterator3["return"]();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
       }
+    }
+  }, {
+    key: "exportFoldData",
+    value: function exportFoldData() {
+      // See: https://github.com/edemaine/fold
+      var fold = {
+        'file_spec': 1,
+        'file_creator': 'SGMO Generator',
+        'file_author': 'SGMO',
+        'file_classes': ['singleModel'],
+        'frame_title': 'A Procedurally Generated Semi-Generalized Miura-Ori',
+        'frame_classes': ['foldedForm'],
+        'frame_attributes': ['3D'],
+        'vertices_coords': [],
+        'edges_vertices': this.edges,
+        'faces_vertices': this.faces,
+        'edges_assignment': this.assignments
+      }; // Vertices need to be reformatted
+
+      this.vertices.forEach(function (v) {
+        return fold['vertices_coords'].push([v.x, v.y, v.z]);
+      });
+      return fold;
     }
   }]);
 
@@ -683,7 +868,7 @@ function () {
 
 exports.GeneratingStrip = GeneratingStrip;
 
-},{"./matrix":3,"./utils":4,"./vector":5}],3:[function(require,module,exports){
+},{"./matrix":4,"./utils":5,"./vector":6}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -756,7 +941,7 @@ function () {
 
 exports["default"] = Matrix;
 
-},{"./vector":5}],4:[function(require,module,exports){
+},{"./vector":6}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -830,17 +1015,17 @@ function toRadians(x) {
 }
 
 function lerpColor(a, b, amount) {
-  var ah = parseInt(a.replace(/#/g, ''), 16),
-      ar = ah >> 16,
-      ag = ah >> 8 & 0xff,
-      ab = ah & 0xff,
-      bh = parseInt(b.replace(/#/g, ''), 16),
-      br = bh >> 16,
-      bg = bh >> 8 & 0xff,
-      bb = bh & 0xff,
-      rr = ar + amount * (br - ar),
-      rg = ag + amount * (bg - ag),
-      rb = ab + amount * (bb - ab);
+  var ah = parseInt(a.replace(/#/g, ''), 16);
+  var ar = ah >> 16;
+  var ag = ah >> 8 & 0xff;
+  var ab = ah & 0xff;
+  var bh = parseInt(b.replace(/#/g, ''), 16);
+  var br = bh >> 16;
+  var bg = bh >> 8 & 0xff;
+  var bb = bh & 0xff;
+  var rr = ar + amount * (br - ar);
+  var rg = ag + amount * (bg - ag);
+  var rb = ab + amount * (bb - ab);
   return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
 }
 
@@ -853,7 +1038,7 @@ function convertHex(hex, opacity) {
   return result;
 }
 
-},{"./vector":5}],5:[function(require,module,exports){
+},{"./vector":6}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -926,6 +1111,15 @@ function () {
     value: function normalize() {
       var l = this.length();
       return this.divideScalar(l);
+    }
+  }, {
+    key: "angle",
+    value: function angle(other) {
+      // Make sure the vector is normalized
+      var normalized = this.normalize(); // Find the angle between `this` and `other`
+
+      var angle = Math.acos(normalized.dot(other.normalize()));
+      return angle;
     }
   }, {
     key: "signedAngle",

@@ -57,6 +57,16 @@ export default class Vector {
 		return this.divideScalar(l);
 	}
 
+	angle(other) {
+		// Make sure the vector is normalized
+		const normalized = this.normalize();
+
+		// Find the angle between `this` and `other`
+		let angle = Math.acos(normalized.dot(other.normalize()));
+
+		return angle;
+	}
+
 	signedAngle(other) {
 		// Make sure the vector is normalized
 		const normalized = this.normalize();
