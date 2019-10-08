@@ -1,14 +1,17 @@
-canvas { 
-	background-color: #f2f0f0;
+canvas {
 	margin: 0px 10px;
+}
+
+.canvas-upper { 
+	background-color: #f2f0f0;
+}
+
+.canvas-lower { 
+	background-color: #f2f0f0;
 }
 
 html, body { 
 	margin: 0; 
-}
-
-.green {
-
 }
 
 .menu {

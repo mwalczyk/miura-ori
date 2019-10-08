@@ -3,6 +3,10 @@ export default class Vector {
 		this.x = x;
 		this.y = y;
 		this.z = z;
+	}	
+
+	copy() {
+		return new Vector(this.x, this.y, this.z);
 	}
 
 	static xAxis() {

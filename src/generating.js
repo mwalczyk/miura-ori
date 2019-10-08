@@ -5,10 +5,15 @@ import * as utils from './utils';
 export class GeneratingLine {
 	constructor() {
 		this.points = [];
+		this.shallowAngle = utils.toRadians(150.0);
 	}
 
 	push(point) {
 		this.points.push(point);
+	}
+
+	pop() {
+		this.points.pop();
 	}
 
 	length() {
@@ -20,31 +25,28 @@ export class GeneratingLine {
 	}
 
 	draw(ctx) {
-		if (this.points.length > 1) {
+		ctx.save();
+		for (let i = 0; i < this.points.length - 1; i++) {
+				let pointA = this.points[i + 0];
+				let pointB = this.points[i + 1];
+				
+				ctx.strokeStyle = '#948e8e';
+				ctx.beginPath();
+				ctx.moveTo(pointA.x, pointA.y); 
+				ctx.lineTo(pointB.x, pointB.y);
+				ctx.stroke();
 
-			ctx.setLineDash([]);
+				ctx.fillStyle = '#576d94';
+				pointA.draw(ctx);
+				pointB.draw(ctx);
 
-			for (let i = 0; i < this.points.length - 1; i++) {
-					let pointA = this.points[i + 0];
-					let pointB = this.points[i + 1];
-					
-					ctx.strokeStyle = '#948e8e';
-					ctx.beginPath();
-					ctx.moveTo(pointA.x, pointA.y); 
-					ctx.lineTo(pointB.x, pointB.y);
-					ctx.stroke();
-
-					ctx.fillStyle = '#576d94';
-					pointA.draw(ctx);
-					pointB.draw(ctx);
-
-					const spacing = 4;
-					ctx.font = "normal 10px Arial";
-					ctx.fillStyle = '#344054';
-					ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y); 
-					ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y); 
-			}
-		}	
+				const spacing = 4;
+				ctx.font = "normal 10px Arial";
+				ctx.fillStyle = '#344054';
+				ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y); 
+				ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y); 
+		}
+		ctx.restore();
 	}
 }
 
@@ -52,34 +54,8 @@ export class GeneratingStrip {
 	constructor(generatingLine, stripWidth) {
 		this.generatingLine = generatingLine;
 		this.stripWidth = stripWidth;
-		this.build();
+		this.generateStrip();
 		this.generateCreasePattern();
-	}
-
-	/** 
-	 * Calculates the slope of the line between two points.
-   * @param {Point} pointA - the first point
-   * @param {Point} pointB - the second point
-   * @returns {number} the slope
-   */
-	slope(pointA, pointB) {
-		let num = pointB.y - pointA.y;
-		let den = pointB.x - pointA.x;
-
-		if (den === 0.0) {
-			console.error('Denominator is zero!');
-		}
-
-		return num / den;
-	}
-
-	intersect(m0, b0, m1, b1) {
-		let xInter = (b0 - b1) / (m1 - m0);
-
-		// Plug into the first equation (arbitrary) to find the y-intercept
-		let yInter = m0 * xInter + b0; 
-
-		return new Vector(xInter, yInter, 0.0);
 	}
 
 	getPointsOrthogonalTo(pointA, pointB) {
@@ -88,7 +64,6 @@ export class GeneratingStrip {
 
 		// A vector orthogonal to `direct`
 		let ortho = new Vector(direct.y, -direct.x, 0.0);
-		ortho = ortho.normalize(); 
 
 		// Keep the "handedness" of the line: `ortho` will always
 		// be pointing "left" from `direct`
@@ -108,9 +83,9 @@ export class GeneratingStrip {
 		// The length of the "infinite" line segment: this is kind of silly, but it works for now
 		const drawLength = 2000.0;
 
+		ctx.save();
 		ctx.strokeStyle = '#bab5b5';
 		ctx.setLineDash([2, 2]);
-
 		for (let i = 0; i < this.lineEquations.length; i++) {
 			let [mU, bU] = this.lineEquations[i][0];
 			let [mD, bD] = this.lineEquations[i][1];
@@ -131,15 +106,19 @@ export class GeneratingStrip {
 			ctx.lineTo(lineDEnd.x, lineDEnd.y);
 			ctx.stroke();
 		}
+		ctx.restore();
 	}
 
 	drawIntersections(ctx) {
+		ctx.save();
 		ctx.fillStyle = '#d96448';
 		this.intersections.forEach((intersection) => intersection.draw(ctx));
+		ctx.restore();
 	}
 
 	drawPolygons(ctx) {
-		ctx.fillStyle = "rgba(154, 227, 226, 0.5)";
+		ctx.save();
+		ctx.fillStyle = utils.convertHex('#9ae3e2', 50.0);
 
 		this.polygons.forEach(([a, b, c, d]) => {
 			ctx.beginPath();
@@ -150,10 +129,11 @@ export class GeneratingStrip {
 			ctx.closePath();
 			ctx.fill();
 		})
+		ctx.restore();
 	}
 
 	drawAngles(ctx) {
-		ctx.setLineDash([]);
+		ctx.save();
 
 		for (let i = 1; i < this.generatingLine.length() - 1; i++) {
 		  // Grab a point and its immediate neighbor along the path
@@ -161,52 +141,63 @@ export class GeneratingStrip {
 			const pointB = this.generatingLine.points[i + 0];
 			const pointC = this.generatingLine.points[i + 1];
 
-			const toAfromB = pointA.subtract(pointB).normalize();
-			const toCfromB = pointC.subtract(pointB).normalize();
+			const heading = pointB.subtract(pointA).normalize();
+			const next = pointC.subtract(pointB).normalize();
 
-			let startTheta = utils.atan2Wrapped(toAfromB.y, toAfromB.x);
-			let endTheta = utils.atan2Wrapped(toCfromB.y, toCfromB.x);
+			// The actual *major* fold angle that will need to be made at this point along the strip
+			const foldAngle = Math.acos(heading.dot(next));
+			const lerpedColor = utils.lerpColor('#bf3054', '#e3cc39', foldAngle / Math.PI);
 
-			// The angle between the two vectors
-			let between = Math.acos(toAfromB.dot(toCfromB));
-			if (toAfromB.cross(toCfromB).z < 0.0) {
-				between = 2.0 * Math.PI - between;
+			let startTheta = utils.atan2Wrapped(heading.y, heading.x);
+			let endTheta = utils.atan2Wrapped(next.y, next.x);
+
+			// Keep the same directionality as the path curves throughout space
+			if (heading.cross(next).z < 0.0) {
+				[startTheta, endTheta] = [endTheta, startTheta];
 			}
+			let bisector = heading.bisector(next).normalize().multiplyScalar(25.0);	
 
-			let bisector = toAfromB.bisector(toCfromB).normalize().multiplyScalar(30.0);	
-
-			const lerpedColor = utils.lerpColor('#e3cc39', '#bf3054', between / (2.0 * Math.PI));
-
+			// Display the angle (in degrees) as text
+			if (bisector.x < 0.0) {
+				ctx.textAlign = 'right';
+			} else {
+				ctx.textAlign = 'left';
+			}
 			const unicodeDeg = String.fromCharCode(176);
-			const spacing = 30;
 			ctx.font = "bold 12px Courier New";
 			ctx.fillStyle = lerpedColor;
-			ctx.fillText(`${Math.trunc(utils.toDegrees(between)).toString()}${unicodeDeg}`, pointB.x + bisector.x, pointB.y + bisector.y);
+			ctx.fillText(`${Math.trunc(utils.toDegrees(foldAngle)).toString()}${unicodeDeg}`, pointB.x + bisector.x, pointB.y + bisector.y);
 
+			// Draw outer / inner arcs with different radii
 			ctx.strokeStyle = lerpedColor;
 			ctx.beginPath();
-			ctx.arc(pointB.x, pointB.y, 18.0, startTheta, endTheta);
+			ctx.arc(pointB.x, pointB.y, 16.0, startTheta, endTheta);
 			ctx.stroke();
+
 			ctx.beginPath();
-			ctx.arc(pointB.x, pointB.y, 20.0, startTheta, endTheta);
+			ctx.arc(pointB.x, pointB.y, 20.0, 0.0, 2.0 * Math.PI);
 			ctx.stroke();
 		}
+		ctx.restore();
 	}
 
 	drawCreasePattern(ctx) {
 		const offset = this.stripWidth;
 
+		// Shrink the CP down horizontally so that it fits on the canvas
 		let [minX, maxX, minY, maxY] = utils.boundingBox(this.vertices);
 		const currentWidth = maxX - minX;
-		const desiredWidth = 600.0 - this.stripWidth * 2.0;
+		const desiredWidth = document.getElementById('canvas-drawing').width - 2.0 * offset;
 
 		const scale = desiredWidth / currentWidth;
 
+		ctx.save();
 		for (let [index, face] of this.faces.entries()) {
 			let [a, b, c, d] = face;
+			let percent = index / this.faces.length;
 
 			ctx.strokeStyle = "#f2f0f0"; // Same as the canvas background color
-			ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', index / this.faces.length);
+			ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', percent);
 
 			ctx.beginPath();
 			ctx.moveTo(this.vertices[a].x * scale + offset, this.vertices[a].y + offset * 3.0);
@@ -214,22 +205,38 @@ export class GeneratingStrip {
 			ctx.lineTo(this.vertices[c].x * scale + offset, this.vertices[c].y + offset * 3.0);
 			ctx.lineTo(this.vertices[d].x * scale + offset, this.vertices[d].y + offset * 3.0);
 			ctx.closePath();
-			
+
+			// Draw both filled and stroked versions of the face
 			ctx.fill();
 			ctx.stroke();
 		}
+		ctx.restore();
 	}
 
-	draw(ctx) {
-		this.drawPolygons(ctx);
-		this.drawInfiniteLines(ctx);
-		this.drawIntersections(ctx);
-		this.drawAngles(ctx);
+	draw(ctxDrawing, ctxCreasePattern) {
+		this.drawPolygons(ctxDrawing);
+		this.drawInfiniteLines(ctxDrawing);
+		this.drawIntersections(ctxDrawing);
+		this.drawAngles(ctxDrawing);
 
-		this.drawCreasePattern(ctx);
+		// Drawn to a different canvas element
+		this.drawCreasePattern(ctxCreasePattern);
 	}
 
-	build() {
+	generateStrip() {
+		// From a generating line (polyline), construct the "silhouette" of the
+		// folded form
+		//
+		// Procedure:
+		//
+		// 1. Iterate over the polyline's points in pairs
+		// 2. For each pair, calculate the slope of the connecting line segment
+		// 3. From this, calculate the slopes and y-intercepts of a pair of parallel
+		//    lines that run alongside the original line calculated in step (2)
+		// 4. Finally, calculate the points of intersection between the set of lines
+		//    calculated in step (3) for each pair of adjacent points
+		// 5. All of the points calculated in step (4) form the silhouette of the 
+		//    folded form, as long as we connect them as quads in CCW winding order
 		this.lineEquations = [];
 		this.intersections = [];
 		this.polygons = [];
@@ -238,7 +245,7 @@ export class GeneratingStrip {
 		  // Grab a point and its immediate neighbor along the path
 			const pointA = this.generatingLine.points[i + 0];
 			const pointB = this.generatingLine.points[i + 1];
-			const m = this.slope(pointA, pointB);
+			const m = utils.slope(pointA, pointB);
 			
 			// Remember: `y = mx + b`
 			// Plug in one point and find the y-intercept
@@ -270,10 +277,10 @@ export class GeneratingStrip {
 			const [m3, b3] = this.lineEquations[i + 1][1];
 
 			// Calculate the intersection between l0 and l3
-			const intersectionA = this.intersect(m0, b0, m3, b3);
+			const intersectionA = utils.intersect(m0, b0, m3, b3);
 
 			// Calculate the intersection between l1 and l2
-			const intersectionB = this.intersect(m1, b1, m2, b2);
+			const intersectionB = utils.intersect(m1, b1, m2, b2);
 
 			// Push back points of intersection: note the order of insertion matters here
 			// for proper CCW winding order
@@ -300,15 +307,16 @@ export class GeneratingStrip {
 		}
 	}
 
-	rearrangePolygon(a, b, c, d, curr_offset, flip, last) {
-			// This function assumes an ordering:
+	rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
+			// This function assumes the following vertex order per face:
+			//
 			// 0-----3
 			// |     |
 			// |     |
 			// 1-----2
-			
-			// Gather points
-			const all_pts = [
+			//
+			// First, gather the points that form this particular polygon
+			let polygonPoints = [
 				this.intersections[a], 
 				this.intersections[b], 
 				this.intersections[c], 
@@ -316,41 +324,32 @@ export class GeneratingStrip {
 			];
 
 			// A direction vector that runs parallel to this polygon's bottom edge
-			const bottom_edge = all_pts[2].subtract(all_pts[1]);
+			const bottomEdge = polygonPoints[2].subtract(polygonPoints[1]);
+			const topLeftCorner = polygonPoints[0];
 
 			// Rotate the bottom edge to be aligned with the x-axis
-			const theta = bottom_edge.signedAngle(Vector.xAxis());
+			const theta = bottomEdge.signedAngle(Vector.xAxis());
 			const rotationMatrix = Matrix.rotationZ(-theta);
 
-			let rotated_pts = [];
-			all_pts.forEach((pt) => {
+			for (let i = 0; i < polygonPoints.length; i++) {
 				// Rotate around the top-left corner of the polygon (the first point)
-				let rot = pt.subtract(all_pts[0]);
-				rot = rotationMatrix.multiply(rot);
+				polygonPoints[i] = rotationMatrix.multiply(polygonPoints[i].subtract(topLeftCorner));
 
+				// Flip across the x-axis and move down by the strip width
 				if (flip) {
-					// Flip across the x-axis and move down by the strip width
-					rot.y = -rot.y;
-					rot.y -= this.stripWidth * 2.0;
+					polygonPoints[i].y = -polygonPoints[i].y;
+					polygonPoints[i].y -= this.stripWidth * 2.0;
 				}
+			}
 
-				rotated_pts.push(rot);
-			});
-
-			// Top right corner
-			const offset = rotated_pts[2].x; 
+			// Top right corner, after rotation
+			const offset = polygonPoints[2].x; 
 
 			// If this is the last polygon to be added, add all 4 points, otherwise only 
 			// add the first two: we do this to avoid adding the same vertices multiple times
-			if (last) {
-				rotated_pts.forEach((pt) => {
-					this.vertices.push(pt.add(new Vector(curr_offset, 0.0, 0.0)));
-				});
-			}
-			else {
-				for (let i = 0; i < 2; i++) {
-					this.vertices.push(rotated_pts[i].add(new Vector(curr_offset, 0.0, 0.0)));
-				}
+			const iterations = last ? 4 : 2;
+			for (let i = 0; i < iterations; i++) {
+				this.vertices.push(polygonPoints[i].add(new Vector(currentOffset, 0.0, 0.0)));
 			}
 
 			return offset;
@@ -364,28 +363,22 @@ export class GeneratingStrip {
 
 		let cumulativeOffset = 0.0;
 		let flip = false;
+
+		// The total number of closed polygons that form the silhouette of this strip
 		let numberOfPolygons = this.intersections.length / 2;
 
 		for (let i = 0; i < numberOfPolygons - 1; i++) {
-			// The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
-			const start = i * 2;
+			// 2, 4, 6, 8, etc.
+			const startIndex = i * 2;
 			 
 			// Whether or not this is the last polygon in the strip
-			const last = (i == numberOfPolygons - 2);
+			const last = (i == numberOfPolygons - 2);	
 
-			const offset = this.rearrangePolygon(start + 0, start + 1, start + 2, start + 3, cumulativeOffset, flip, last);
+			let [a, b, c, d] = [startIndex + 0, startIndex + 1, startIndex + 2, startIndex + 3];
+			const offset = this.rearrangePolygon(a, b, c, d, cumulativeOffset, flip, last);
 			cumulativeOffset += offset;
 
-			// The next polygon will need to be flipped, etc.
-			flip = !flip;
-		}
-
-		// Construct faces
-		for (let i = 0; i < numberOfPolygons - 1; i++) { 
-			// The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
-			const start = i * 2;
-
-			// Was this polygon flipped?
+			// Add this face, taking care to note whether the polygon was flipped
 			// 
 			// Face vertices are assumed to have been added in the following order:
 			// 
@@ -396,14 +389,73 @@ export class GeneratingStrip {
 			//
 			// So, reorient the flipped polygons here, ensuring the same CCW
 			// winding order <ul, ll, lr, ur>
-			if (i % 2 != 0) {
-				const indices = [start + 1, start + 0, start + 3, start + 2];
-				this.faces.push(indices);
-			}
-			else {
-				const indices = [start + 0, start + 1, start + 2, start + 3];
-				this.faces.push(indices);
-			}
+			const indices = flip ? [b, a, d, c] : [a, b, c, d];
+			this.faces.push(indices);
+
+			// The next polygon will need to be flipped, etc.
+			flip = !flip;
 		}
+
+		// Reflect the entire pattern across the x-axis
+		// 
+		// Procedure:
+		//
+		// 1. Begin iterating over each of the pre-existing (quad) faces
+		// 2. For each face, grab the lower two vertices (lower left / lower right)
+		// 3. Reflect each of these vertices across the positive x-axis and add
+		//    them to the pre-existing list of vertices
+		// 4. Calculate a new set of face indices (in CCW winding order) that
+		//    corresponds to the new, reflected face
+		// 5. Concatenate the newly generated list of faces with the pre-existing
+		//    list of faces
+		const numberOfRows = 8;
+		const numberOfReflections = numberOfRows - 1;
+
+		let facesCurrent = [...this.faces];
+
+		for (let row = 0; row < numberOfReflections; row++) {
+			//console.log('Row:', row)
+			let facesNext = []
+
+			for (let [i, f] of facesCurrent.entries()) {
+				const ul = f[0]; // Upper left
+				const ll = f[1]; // Lower left 
+				const lr = f[2]; // Lower right
+				const ur = f[3]; // Upper right
+
+				// First, duplicate the two lower vertices across the positive x-axis
+				let vertexA = this.vertices[ll].copy();
+				let vertexB = this.vertices[lr].copy();
+
+				const r = 4.0 * this.stripWidth;	
+				vertexA.y += r; 
+				vertexB.y += r;
+
+				// Create the new set of face indices
+				const reflectedFace = [
+					this.vertices.length + 0,
+					ul,
+					ur, 
+					this.vertices.length + 1
+				];
+
+				// Push back the new pair of vertices: we only want to add the 
+				// left vertex to avoid duplicates - except for the last face
+				this.vertices.push(vertexA);
+
+				if (i == facesCurrent.length - 1) {
+					this.vertices.push(vertexB);
+				}
+
+				// Push back the new face
+				facesNext.push(reflectedFace);
+			}
+
+			// Add new faces to global array
+			this.faces.push(...facesNext);
+
+			// Reset array of faces to be processed
+			facesCurrent = [...facesNext];
+		}		
 	}
 }

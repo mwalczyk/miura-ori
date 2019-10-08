@@ -24,29 +24,39 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 // 6. https://jsdoc.app/
 // Create canvas element and append it to document body
 var divCanvas = document.getElementById('div-canvas');
-var canvas = document.createElement('canvas');
-canvas.width = 600;
-canvas.height = 600;
-divCanvas.appendChild(canvas); // Grab the 2D rendering context
+var canvasDrawing = document.createElement('canvas');
+canvasDrawing.setAttribute('id', 'canvas-drawing');
+canvasDrawing.setAttribute('class', 'canvas-upper');
+canvasDrawing.width = 600;
+canvasDrawing.height = 600;
+var canvasCreasePattern = document.createElement('canvas');
+canvasCreasePattern.setAttribute('id', 'canvas-crease-pattern');
+canvasCreasePattern.setAttribute('class', 'canvas-lower');
+canvasCreasePattern.width = 600;
+canvasCreasePattern.height = 180;
+divCanvas.appendChild(canvasDrawing);
+divCanvas.appendChild(canvasCreasePattern); // Grab the 2D rendering context
 
-var ctx = canvas.getContext('2d'); // Grab references to DOM elements
+var ctxDrawing = canvasDrawing.getContext('2d');
+var ctxCreasePattern = canvasCreasePattern.getContext('2d'); // Grab references to DOM elements
 
 var buttonClear = document.getElementById('button-clear');
 var pNumberOfPoints = document.getElementById("p-number-of-points"); // Add event listeners
 
-canvas.addEventListener('mousedown', addPoint);
+canvasDrawing.addEventListener('mousedown', addPoint);
 buttonClear.addEventListener('click', clearCanvas);
 
 function resize() {
   // Make the canvas full-screen
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvasDrawing.width = window.innerWidth;
+  canvasDrawing.height = window.innerHeight;
 }
 
 var generatingLine = new _generating.GeneratingLine();
 
 function clearCanvas(e) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
+  ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
   generatingLine.clear();
 }
 
@@ -57,14 +67,15 @@ function addPoint(e) {
 }
 
 function drawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
+  ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
 
   if (generatingLine.length() > 1) {
     var generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0);
-    generatingStrip.draw(ctx);
+    generatingStrip.draw(ctxDrawing, ctxCreasePattern);
   }
 
-  generatingLine.draw(ctx);
+  generatingLine.draw(ctxDrawing);
 }
 
 },{"./src/generating":2,"./src/vector":5}],2:[function(require,module,exports){
@@ -87,6 +98,14 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -108,12 +127,18 @@ function () {
     _classCallCheck(this, GeneratingLine);
 
     this.points = [];
+    this.shallowAngle = utils.toRadians(150.0);
   }
 
   _createClass(GeneratingLine, [{
     key: "push",
     value: function push(point) {
       this.points.push(point);
+    }
+  }, {
+    key: "pop",
+    value: function pop() {
+      this.points.pop();
     }
   }, {
     key: "length",
@@ -128,27 +153,27 @@ function () {
   }, {
     key: "draw",
     value: function draw(ctx) {
-      if (this.points.length > 1) {
-        ctx.setLineDash([]);
+      ctx.save();
 
-        for (var i = 0; i < this.points.length - 1; i++) {
-          var pointA = this.points[i + 0];
-          var pointB = this.points[i + 1];
-          ctx.strokeStyle = '#948e8e';
-          ctx.beginPath();
-          ctx.moveTo(pointA.x, pointA.y);
-          ctx.lineTo(pointB.x, pointB.y);
-          ctx.stroke();
-          ctx.fillStyle = '#576d94';
-          pointA.draw(ctx);
-          pointB.draw(ctx);
-          var spacing = 4;
-          ctx.font = "normal 10px Arial";
-          ctx.fillStyle = '#344054';
-          ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
-          ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
-        }
+      for (var i = 0; i < this.points.length - 1; i++) {
+        var pointA = this.points[i + 0];
+        var pointB = this.points[i + 1];
+        ctx.strokeStyle = '#948e8e';
+        ctx.beginPath();
+        ctx.moveTo(pointA.x, pointA.y);
+        ctx.lineTo(pointB.x, pointB.y);
+        ctx.stroke();
+        ctx.fillStyle = '#576d94';
+        pointA.draw(ctx);
+        pointB.draw(ctx);
+        var spacing = 4;
+        ctx.font = "normal 10px Arial";
+        ctx.fillStyle = '#344054';
+        ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
+        ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
       }
+
+      ctx.restore();
     }
   }]);
 
@@ -165,45 +190,17 @@ function () {
 
     this.generatingLine = generatingLine;
     this.stripWidth = stripWidth;
-    this.build();
+    this.generateStrip();
     this.generateCreasePattern();
   }
-  /** 
-   * Calculates the slope of the line between two points.
-    * @param {Point} pointA - the first point
-    * @param {Point} pointB - the second point
-    * @returns {number} the slope
-    */
-
 
   _createClass(GeneratingStrip, [{
-    key: "slope",
-    value: function slope(pointA, pointB) {
-      var num = pointB.y - pointA.y;
-      var den = pointB.x - pointA.x;
-
-      if (den === 0.0) {
-        console.error('Denominator is zero!');
-      }
-
-      return num / den;
-    }
-  }, {
-    key: "intersect",
-    value: function intersect(m0, b0, m1, b1) {
-      var xInter = (b0 - b1) / (m1 - m0); // Plug into the first equation (arbitrary) to find the y-intercept
-
-      var yInter = m0 * xInter + b0;
-      return new _vector["default"](xInter, yInter, 0.0);
-    }
-  }, {
     key: "getPointsOrthogonalTo",
     value: function getPointsOrthogonalTo(pointA, pointB) {
       // A vector that points from `pointA` towards `pointB`
       var direct = pointB.subtract(pointA).normalize(); // A vector orthogonal to `direct`
 
-      var ortho = new _vector["default"](direct.y, -direct.x, 0.0);
-      ortho = ortho.normalize(); // Keep the "handedness" of the line: `ortho` will always
+      var ortho = new _vector["default"](direct.y, -direct.x, 0.0); // Keep the "handedness" of the line: `ortho` will always
       // be pointing "left" from `direct`
 
       if (direct.cross(ortho).z < 0.0) {
@@ -221,6 +218,7 @@ function () {
     value: function drawInfiniteLines(ctx) {
       // The length of the "infinite" line segment: this is kind of silly, but it works for now
       var drawLength = 2000.0;
+      ctx.save();
       ctx.strokeStyle = '#bab5b5';
       ctx.setLineDash([2, 2]);
 
@@ -246,21 +244,26 @@ function () {
         ctx.lineTo(lineDEnd.x, lineDEnd.y);
         ctx.stroke();
       }
+
+      ctx.restore();
     }
   }, {
     key: "drawIntersections",
     value: function drawIntersections(ctx) {
+      ctx.save();
       ctx.fillStyle = '#d96448';
       this.intersections.forEach(function (intersection) {
         return intersection.draw(ctx);
       });
+      ctx.restore();
     }
   }, {
     key: "drawPolygons",
     value: function drawPolygons(ctx) {
       var _this = this;
 
-      ctx.fillStyle = "rgba(154, 227, 226, 0.5)";
+      ctx.save();
+      ctx.fillStyle = utils.convertHex('#9ae3e2', 50.0);
       this.polygons.forEach(function (_ref) {
         var _ref2 = _slicedToArray(_ref, 4),
             a = _ref2[0],
@@ -276,48 +279,60 @@ function () {
         ctx.closePath();
         ctx.fill();
       });
+      ctx.restore();
     }
   }, {
     key: "drawAngles",
     value: function drawAngles(ctx) {
-      ctx.setLineDash([]);
+      ctx.save();
 
       for (var i = 1; i < this.generatingLine.length() - 1; i++) {
         // Grab a point and its immediate neighbor along the path
         var pointA = this.generatingLine.points[i - 1];
         var pointB = this.generatingLine.points[i + 0];
         var pointC = this.generatingLine.points[i + 1];
-        var toAfromB = pointA.subtract(pointB).normalize();
-        var toCfromB = pointC.subtract(pointB).normalize();
-        var startTheta = utils.atan2Wrapped(toAfromB.y, toAfromB.x);
-        var endTheta = utils.atan2Wrapped(toCfromB.y, toCfromB.x); // The angle between the two vectors
+        var heading = pointB.subtract(pointA).normalize();
+        var next = pointC.subtract(pointB).normalize(); // The actual *major* fold angle that will need to be made at this point along the strip
 
-        var between = Math.acos(toAfromB.dot(toCfromB));
+        var foldAngle = Math.acos(heading.dot(next));
+        var lerpedColor = utils.lerpColor('#bf3054', '#e3cc39', foldAngle / Math.PI);
+        var startTheta = utils.atan2Wrapped(heading.y, heading.x);
+        var endTheta = utils.atan2Wrapped(next.y, next.x); // Keep the same directionality as the path curves throughout space
 
-        if (toAfromB.cross(toCfromB).z < 0.0) {
-          between = 2.0 * Math.PI - between;
+        if (heading.cross(next).z < 0.0) {
+          var _ref3 = [endTheta, startTheta];
+          startTheta = _ref3[0];
+          endTheta = _ref3[1];
         }
 
-        var bisector = toAfromB.bisector(toCfromB).normalize().multiplyScalar(30.0);
-        var lerpedColor = utils.lerpColor('#e3cc39', '#bf3054', between / (2.0 * Math.PI));
+        var bisector = heading.bisector(next).normalize().multiplyScalar(25.0); // Display the angle (in degrees) as text
+
+        if (bisector.x < 0.0) {
+          ctx.textAlign = 'right';
+        } else {
+          ctx.textAlign = 'left';
+        }
+
         var unicodeDeg = String.fromCharCode(176);
-        var spacing = 30;
         ctx.font = "bold 12px Courier New";
         ctx.fillStyle = lerpedColor;
-        ctx.fillText("".concat(Math.trunc(utils.toDegrees(between)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y);
+        ctx.fillText("".concat(Math.trunc(utils.toDegrees(foldAngle)).toString()).concat(unicodeDeg), pointB.x + bisector.x, pointB.y + bisector.y); // Draw outer / inner arcs with different radii
+
         ctx.strokeStyle = lerpedColor;
         ctx.beginPath();
-        ctx.arc(pointB.x, pointB.y, 18.0, startTheta, endTheta);
+        ctx.arc(pointB.x, pointB.y, 16.0, startTheta, endTheta);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(pointB.x, pointB.y, 20.0, startTheta, endTheta);
+        ctx.arc(pointB.x, pointB.y, 20.0, 0.0, 2.0 * Math.PI);
         ctx.stroke();
       }
+
+      ctx.restore();
     }
   }, {
     key: "drawCreasePattern",
     value: function drawCreasePattern(ctx) {
-      var offset = this.stripWidth;
+      var offset = this.stripWidth; // Shrink the CP down horizontally so that it fits on the canvas
 
       var _utils$boundingBox = utils.boundingBox(this.vertices),
           _utils$boundingBox2 = _slicedToArray(_utils$boundingBox, 4),
@@ -327,8 +342,9 @@ function () {
           maxY = _utils$boundingBox2[3];
 
       var currentWidth = maxX - minX;
-      var desiredWidth = 600.0 - this.stripWidth * 2.0;
+      var desiredWidth = document.getElementById('canvas-drawing').width - 2.0 * offset;
       var scale = desiredWidth / currentWidth;
+      ctx.save();
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -345,15 +361,17 @@ function () {
               c = _face[2],
               d = _face[3];
 
+          var percent = index / this.faces.length;
           ctx.strokeStyle = "#f2f0f0"; // Same as the canvas background color
 
-          ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', index / this.faces.length);
+          ctx.fillStyle = utils.lerpColor('#e3cc39', '#bf3054', percent);
           ctx.beginPath();
           ctx.moveTo(this.vertices[a].x * scale + offset, this.vertices[a].y + offset * 3.0);
           ctx.lineTo(this.vertices[b].x * scale + offset, this.vertices[b].y + offset * 3.0);
           ctx.lineTo(this.vertices[c].x * scale + offset, this.vertices[c].y + offset * 3.0);
           ctx.lineTo(this.vertices[d].x * scale + offset, this.vertices[d].y + offset * 3.0);
-          ctx.closePath();
+          ctx.closePath(); // Draw both filled and stroked versions of the face
+
           ctx.fill();
           ctx.stroke();
         }
@@ -371,19 +389,35 @@ function () {
           }
         }
       }
+
+      ctx.restore();
     }
   }, {
     key: "draw",
-    value: function draw(ctx) {
-      this.drawPolygons(ctx);
-      this.drawInfiniteLines(ctx);
-      this.drawIntersections(ctx);
-      this.drawAngles(ctx);
-      this.drawCreasePattern(ctx);
+    value: function draw(ctxDrawing, ctxCreasePattern) {
+      this.drawPolygons(ctxDrawing);
+      this.drawInfiniteLines(ctxDrawing);
+      this.drawIntersections(ctxDrawing);
+      this.drawAngles(ctxDrawing); // Drawn to a different canvas element
+
+      this.drawCreasePattern(ctxCreasePattern);
     }
   }, {
-    key: "build",
-    value: function build() {
+    key: "generateStrip",
+    value: function generateStrip() {
+      // From a generating line (polyline), construct the "silhouette" of the
+      // folded form
+      //
+      // Procedure:
+      //
+      // 1. Iterate over the polyline's points in pairs
+      // 2. For each pair, calculate the slope of the connecting line segment
+      // 3. From this, calculate the slopes and y-intercepts of a pair of parallel
+      //    lines that run alongside the original line calculated in step (2)
+      // 4. Finally, calculate the points of intersection between the set of lines
+      //    calculated in step (3) for each pair of adjacent points
+      // 5. All of the points calculated in step (4) form the silhouette of the 
+      //    folded form, as long as we connect them as quads in CCW winding order
       this.lineEquations = [];
       this.intersections = [];
       this.polygons = [];
@@ -392,7 +426,7 @@ function () {
         // Grab a point and its immediate neighbor along the path
         var pointA = this.generatingLine.points[i + 0];
         var pointB = this.generatingLine.points[i + 1];
-        var m = this.slope(pointA, pointB); // Remember: `y = mx + b`
+        var m = utils.slope(pointA, pointB); // Remember: `y = mx + b`
         // Plug in one point and find the y-intercept
 
         var b = pointA.y - m * pointA.x;
@@ -436,9 +470,9 @@ function () {
             b3 = _this$lineEquations$4[1]; // Calculate the intersection between l0 and l3
 
 
-        var intersectionA = this.intersect(m0, b0, m3, b3); // Calculate the intersection between l1 and l2
+        var intersectionA = utils.intersect(m0, b0, m3, b3); // Calculate the intersection between l1 and l2
 
-        var intersectionB = this.intersect(m1, b1, m2, b2); // Push back points of intersection: note the order of insertion matters here
+        var intersectionB = utils.intersect(m1, b1, m2, b2); // Push back points of intersection: note the order of insertion matters here
         // for proper CCW winding order
 
         this.intersections.push(intersectionB);
@@ -472,49 +506,42 @@ function () {
     }
   }, {
     key: "rearrangePolygon",
-    value: function rearrangePolygon(a, b, c, d, curr_offset, flip, last) {
-      var _this2 = this;
-
-      // This function assumes an ordering:
+    value: function rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
+      // This function assumes the following vertex order per face:
+      //
       // 0-----3
       // |     |
       // |     |
       // 1-----2
-      // Gather points
-      var all_pts = [this.intersections[a], this.intersections[b], this.intersections[c], this.intersections[d]]; // A direction vector that runs parallel to this polygon's bottom edge
+      //
+      // First, gather the points that form this particular polygon
+      var polygonPoints = [this.intersections[a], this.intersections[b], this.intersections[c], this.intersections[d]]; // A direction vector that runs parallel to this polygon's bottom edge
 
-      var bottom_edge = all_pts[2].subtract(all_pts[1]); // Rotate the bottom edge to be aligned with the x-axis
+      var bottomEdge = polygonPoints[2].subtract(polygonPoints[1]);
+      var topLeftCorner = polygonPoints[0]; // Rotate the bottom edge to be aligned with the x-axis
 
-      var theta = bottom_edge.signedAngle(_vector["default"].xAxis());
+      var theta = bottomEdge.signedAngle(_vector["default"].xAxis());
 
       var rotationMatrix = _matrix["default"].rotationZ(-theta);
 
-      var rotated_pts = [];
-      all_pts.forEach(function (pt) {
+      for (var i = 0; i < polygonPoints.length; i++) {
         // Rotate around the top-left corner of the polygon (the first point)
-        var rot = pt.subtract(all_pts[0]);
-        rot = rotationMatrix.multiply(rot);
+        polygonPoints[i] = rotationMatrix.multiply(polygonPoints[i].subtract(topLeftCorner)); // Flip across the x-axis and move down by the strip width
 
         if (flip) {
-          // Flip across the x-axis and move down by the strip width
-          rot.y = -rot.y;
-          rot.y -= _this2.stripWidth * 2.0;
+          polygonPoints[i].y = -polygonPoints[i].y;
+          polygonPoints[i].y -= this.stripWidth * 2.0;
         }
+      } // Top right corner, after rotation
 
-        rotated_pts.push(rot);
-      }); // Top right corner
 
-      var offset = rotated_pts[2].x; // If this is the last polygon to be added, add all 4 points, otherwise only 
+      var offset = polygonPoints[2].x; // If this is the last polygon to be added, add all 4 points, otherwise only 
       // add the first two: we do this to avoid adding the same vertices multiple times
 
-      if (last) {
-        rotated_pts.forEach(function (pt) {
-          _this2.vertices.push(pt.add(new _vector["default"](curr_offset, 0.0, 0.0)));
-        });
-      } else {
-        for (var i = 0; i < 2; i++) {
-          this.vertices.push(rotated_pts[i].add(new _vector["default"](curr_offset, 0.0, 0.0)));
-        }
+      var iterations = last ? 4 : 2;
+
+      for (var _i4 = 0; _i4 < iterations; _i4++) {
+        this.vertices.push(polygonPoints[_i4].add(new _vector["default"](currentOffset, 0.0, 0.0)));
       }
 
       return offset;
@@ -527,24 +554,21 @@ function () {
       this.faces = [];
       this.assignments = [];
       var cumulativeOffset = 0.0;
-      var flip = false;
+      var flip = false; // The total number of closed polygons that form the silhouette of this strip
+
       var numberOfPolygons = this.intersections.length / 2;
 
       for (var i = 0; i < numberOfPolygons - 1; i++) {
-        // The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
-        var start = i * 2; // Whether or not this is the last polygon in the strip
+        // 2, 4, 6, 8, etc.
+        var startIndex = i * 2; // Whether or not this is the last polygon in the strip
 
         var last = i == numberOfPolygons - 2;
-        var offset = this.rearrangePolygon(start + 0, start + 1, start + 2, start + 3, cumulativeOffset, flip, last);
-        cumulativeOffset += offset; // The next polygon will need to be flipped, etc.
-
-        flip = !flip;
-      } // Construct faces
-
-
-      for (var _i4 = 0; _i4 < numberOfPolygons - 1; _i4++) {
-        // The starting index of this polygon (i.e. 2, 4, 6, 8, etc.)
-        var _start = _i4 * 2; // Was this polygon flipped?
+        var a = startIndex + 0,
+            b = startIndex + 1,
+            c = startIndex + 2,
+            d = startIndex + 3;
+        var offset = this.rearrangePolygon(a, b, c, d, cumulativeOffset, flip, last);
+        cumulativeOffset += offset; // Add this face, taking care to note whether the polygon was flipped
         // 
         // Face vertices are assumed to have been added in the following order:
         // 
@@ -556,14 +580,91 @@ function () {
         // So, reorient the flipped polygons here, ensuring the same CCW
         // winding order <ul, ll, lr, ur>
 
+        var indices = flip ? [b, a, d, c] : [a, b, c, d];
+        this.faces.push(indices); // The next polygon will need to be flipped, etc.
 
-        if (_i4 % 2 != 0) {
-          var indices = [_start + 1, _start + 0, _start + 3, _start + 2];
-          this.faces.push(indices);
-        } else {
-          var _indices = [_start + 0, _start + 1, _start + 2, _start + 3];
-          this.faces.push(_indices);
+        flip = !flip;
+      } // Reflect the entire pattern across the x-axis
+      // 
+      // Procedure:
+      //
+      // 1. Begin iterating over each of the pre-existing (quad) faces
+      // 2. For each face, grab the lower two vertices (lower left / lower right)
+      // 3. Reflect each of these vertices across the positive x-axis and add
+      //    them to the pre-existing list of vertices
+      // 4. Calculate a new set of face indices (in CCW winding order) that
+      //    corresponds to the new, reflected face
+      // 5. Concatenate the newly generated list of faces with the pre-existing
+      //    list of faces
+
+
+      var numberOfRows = 8;
+      var numberOfReflections = numberOfRows - 1;
+
+      var facesCurrent = _toConsumableArray(this.faces);
+
+      for (var row = 0; row < numberOfReflections; row++) {
+        var _this$faces;
+
+        //console.log('Row:', row)
+        var facesNext = [];
+        var _iteratorNormalCompletion2 = true;
+        var _didIteratorError2 = false;
+        var _iteratorError2 = undefined;
+
+        try {
+          for (var _iterator2 = facesCurrent.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var _step2$value = _slicedToArray(_step2.value, 2),
+                _i5 = _step2$value[0],
+                f = _step2$value[1];
+
+            var ul = f[0]; // Upper left
+
+            var ll = f[1]; // Lower left 
+
+            var lr = f[2]; // Lower right
+
+            var ur = f[3]; // Upper right
+            // First, duplicate the two lower vertices across the positive x-axis
+
+            var vertexA = this.vertices[ll].copy();
+            var vertexB = this.vertices[lr].copy();
+            var r = 4.0 * this.stripWidth;
+            vertexA.y += r;
+            vertexB.y += r; // Create the new set of face indices
+
+            var reflectedFace = [this.vertices.length + 0, ul, ur, this.vertices.length + 1]; // Push back the new pair of vertices: we only want to add the 
+            // left vertex to avoid duplicates - except for the last face
+
+            this.vertices.push(vertexA);
+
+            if (_i5 == facesCurrent.length - 1) {
+              this.vertices.push(vertexB);
+            } // Push back the new face
+
+
+            facesNext.push(reflectedFace);
+          } // Add new faces to global array
+
+        } catch (err) {
+          _didIteratorError2 = true;
+          _iteratorError2 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+              _iterator2["return"]();
+            }
+          } finally {
+            if (_didIteratorError2) {
+              throw _iteratorError2;
+            }
+          }
         }
+
+        (_this$faces = this.faces).push.apply(_this$faces, facesNext); // Reset array of faces to be processed
+
+
+        facesCurrent = [].concat(facesNext);
       }
     }
   }]);
@@ -653,10 +754,19 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.boundingBox = boundingBox;
+exports.slope = slope;
+exports.intersect = intersect;
 exports.atan2Wrapped = atan2Wrapped;
 exports.toDegrees = toDegrees;
 exports.toRadians = toRadians;
 exports.lerpColor = lerpColor;
+exports.convertHex = convertHex;
+
+var _vector = _interopRequireDefault(require("./vector"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+var espilon = 0.001;
 
 function boundingBox(vectors) {
   var minX = 0.0;
@@ -670,6 +780,31 @@ function boundingBox(vectors) {
     if (vector.y > maxY) maxY = vector.y;
   });
   return [minX, maxX, minY, maxY];
+}
+/** 
+ * Calculates the slope of the line between two points.
+ * @param {Vector} pointA - the first point (technically, vector)
+ * @param {Vector} pointB - the second point (technically, vector)
+ * @returns {number} the slope
+ */
+
+
+function slope(pointA, pointB) {
+  var num = pointB.y - pointA.y;
+  var den = pointB.x - pointA.x;
+
+  if (den === 0.0) {
+    console.log('Denominator is zero!');
+    den = espilon;
+  }
+
+  return num / den;
+}
+
+function intersect(m0, b0, m1, b1) {
+  var xInter = (b0 - b1) / (m1 - m0);
+  var yInter = m0 * xInter + b0;
+  return new _vector["default"](xInter, yInter, 0.0);
 }
 
 function atan2Wrapped(y, x) {
@@ -700,7 +835,16 @@ function lerpColor(a, b, amount) {
   return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
 }
 
-},{}],5:[function(require,module,exports){
+function convertHex(hex, opacity) {
+  hex = hex.replace('#', '');
+  var r = parseInt(hex.substring(0, 2), 16);
+  var g = parseInt(hex.substring(2, 4), 16);
+  var b = parseInt(hex.substring(4, 6), 16);
+  var result = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
+  return result;
+}
+
+},{"./vector":5}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -726,6 +870,11 @@ function () {
   }
 
   _createClass(Vector, [{
+    key: "copy",
+    value: function copy() {
+      return new Vector(this.x, this.y, this.z);
+    }
+  }, {
     key: "add",
     value: function add(other) {
       return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);

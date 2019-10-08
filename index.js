@@ -19,32 +19,44 @@ import Vector from './src/vector';
 
 // Create canvas element and append it to document body
 const divCanvas = document.getElementById('div-canvas');
-const canvas = document.createElement('canvas');
-canvas.width = 600;
-canvas.height = 600;
-divCanvas.appendChild(canvas);
+const canvasDrawing = document.createElement('canvas');
+canvasDrawing.setAttribute('id', 'canvas-drawing');
+canvasDrawing.setAttribute('class', 'canvas-upper');
+canvasDrawing.width = 600;
+canvasDrawing.height = 600;
+
+const canvasCreasePattern = document.createElement('canvas');
+canvasCreasePattern.setAttribute('id', 'canvas-crease-pattern');
+canvasCreasePattern.setAttribute('class', 'canvas-lower');
+canvasCreasePattern.width = 600;
+canvasCreasePattern.height = 180;
+
+divCanvas.appendChild(canvasDrawing);
+divCanvas.appendChild(canvasCreasePattern);
 
 // Grab the 2D rendering context
-const ctx = canvas.getContext('2d');
+const ctxDrawing = canvasDrawing.getContext('2d');
+const ctxCreasePattern = canvasCreasePattern.getContext('2d');
 
 // Grab references to DOM elements
 const buttonClear = document.getElementById('button-clear');
 const pNumberOfPoints = document.getElementById("p-number-of-points");
 
 // Add event listeners
-canvas.addEventListener('mousedown', addPoint);
+canvasDrawing.addEventListener('mousedown', addPoint);
 buttonClear.addEventListener('click', clearCanvas);
 
 function resize() {
 	// Make the canvas full-screen
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvasDrawing.width = window.innerWidth;
+  canvasDrawing.height = window.innerHeight;
 }
 
 let generatingLine = new GeneratingLine();
 
 function clearCanvas(e) {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
+	ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
 
 	generatingLine.clear();
 }
@@ -58,14 +70,15 @@ function addPoint(e) {
 }
 
 function drawCanvas() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
+	ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
 	
 	if (generatingLine.length() > 1) {
 		let generatingStrip = new GeneratingStrip(generatingLine, 10.0);
-		generatingStrip.draw(ctx);
+		generatingStrip.draw(ctxDrawing, ctxCreasePattern);
 	}
 
-	generatingLine.draw(ctx);
+	generatingLine.draw(ctxDrawing);
 }
 
 
