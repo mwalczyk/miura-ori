@@ -3,7 +3,7 @@ export default class Vector {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-	}	
+	}
 
 	copy() {
 		return new Vector(this.x, this.y, this.z);
@@ -73,7 +73,7 @@ export default class Vector {
 
 		// Find the angle between `this` and `other`
 		let angle = Math.acos(normalized.dot(other));
-		const cross = normalized.cross(other)
+		const cross = normalized.cross(other);
 
 		// Potentially reverse the angle
 		if (Vector.zAxis().dot(cross) > 0.0) {
@@ -84,7 +84,9 @@ export default class Vector {
 	}
 
 	bisector(other) {
-		return this.multiplyScalar(other.length()).add(other.multiplyScalar(this.length()))
+		return this.multiplyScalar(other.length()).add(
+			other.multiplyScalar(this.length())
+		);
 	}
 
 	print() {
@@ -93,7 +95,7 @@ export default class Vector {
 
 	draw(ctx, radius) {
 		ctx.beginPath();
-	  ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI, false);
-	  ctx.fill();
+		ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI, false);
+		ctx.fill();
 	}
 }

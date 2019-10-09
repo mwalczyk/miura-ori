@@ -1,4 +1,4 @@
-import Vector from './vector';
+import Vector from "./vector";
 
 const espilon = 0.001;
 
@@ -8,7 +8,7 @@ export function boundingBox(vectors) {
 	let minY = 0.0;
 	let maxY = 0.0;
 
-	vectors.forEach((vector) => {
+	vectors.forEach(vector => {
 		if (vector.x < minX) minX = vector.x;
 		if (vector.x > maxX) maxX = vector.x;
 		if (vector.y < minY) minY = vector.y;
@@ -18,7 +18,7 @@ export function boundingBox(vectors) {
 	return [minX, maxX, minY, maxY];
 }
 
-/** 
+/**
  * Calculates the slope of the line between two points.
  * @param {Vector} pointA - the first point (technically, vector)
  * @param {Vector} pointB - the second point (technically, vector)
@@ -29,7 +29,7 @@ export function slope(pointA, pointB) {
 	let den = pointB.x - pointA.x;
 
 	if (den === 0.0) {
-		console.log('Denominator is zero!');
+		console.log("Denominator is zero!");
 		den = espilon;
 	}
 
@@ -38,7 +38,7 @@ export function slope(pointA, pointB) {
 
 export function intersect(m0, b0, m1, b1) {
 	let xInter = (b0 - b1) / (m1 - m0);
-	let yInter = m0 * xInter + b0; 
+	let yInter = m0 * xInter + b0;
 
 	return new Vector(xInter, yInter, 0.0);
 }
@@ -56,29 +56,31 @@ export function toRadians(x) {
 	return x * (Math.PI / 180.0);
 }
 
-export function lerpColor(a, b, amount) { 
-	const ah = parseInt(a.replace(/#/g, ''), 16);
-	const	ar = ah >> 16; 
-	const ag = ah >> 8 & 0xff; 
+export function lerpColor(a, b, amount) {
+	const ah = parseInt(a.replace(/#/g, ""), 16);
+	const ar = ah >> 16;
+	const ag = (ah >> 8) & 0xff;
 	const ab = ah & 0xff;
-	const bh = parseInt(b.replace(/#/g, ''), 16);
-	const br = bh >> 16; 
-	const bg = bh >> 8 & 0xff; 
+	const bh = parseInt(b.replace(/#/g, ""), 16);
+	const br = bh >> 16;
+	const bg = (bh >> 8) & 0xff;
 	const bb = bh & 0xff;
 	const rr = ar + amount * (br - ar);
 	const rg = ag + amount * (bg - ag);
 	const rb = ab + amount * (bb - ab);
 
-	return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+	return (
+		"#" + (((1 << 24) + (rr << 16) + (rg << 8) + rb) | 0).toString(16).slice(1)
+	);
 }
 
-export function convertHex(hex, opacity){
-    hex = hex.replace('#','');
-    const r = parseInt(hex.substring(0,2), 16);
-    const g = parseInt(hex.substring(2,4), 16);
-    const b = parseInt(hex.substring(4,6), 16);
+export function convertHex(hex, opacity) {
+	hex = hex.replace("#", "");
+	const r = parseInt(hex.substring(0, 2), 16);
+	const g = parseInt(hex.substring(2, 4), 16);
+	const b = parseInt(hex.substring(4, 6), 16);
 
-    const result = 'rgba('+r+','+g+','+b+','+opacity/100+')';
+	const result = "rgba(" + r + "," + g + "," + b + "," + opacity / 100 + ")";
 
-    return result;
+	return result;
 }

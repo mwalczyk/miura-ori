@@ -19,44 +19,44 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 // 2. Install any other required node modules locally: `npm install`
 // 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
 // Create canvas element and append it to document body
-var divCanvas = document.getElementById('div-canvas');
-var canvasDrawing = document.createElement('canvas');
-canvasDrawing.setAttribute('id', 'canvas-drawing');
-canvasDrawing.setAttribute('class', 'drawing-upper');
+var divCanvas = document.getElementById("div-canvas");
+var canvasDrawing = document.createElement("canvas");
+canvasDrawing.setAttribute("id", "canvas-drawing");
+canvasDrawing.setAttribute("class", "drawing-upper");
 canvasDrawing.width = 600;
 canvasDrawing.height = 600;
-var canvasCreasePattern = document.createElement('canvas');
-canvasCreasePattern.setAttribute('id', 'canvas-crease-pattern');
-canvasCreasePattern.setAttribute('class', 'drawing-lower');
+var canvasCreasePattern = document.createElement("canvas");
+canvasCreasePattern.setAttribute("id", "canvas-crease-pattern");
+canvasCreasePattern.setAttribute("class", "drawing-lower");
 canvasCreasePattern.width = 600;
 canvasCreasePattern.height = 180;
 divCanvas.appendChild(canvasDrawing);
 divCanvas.appendChild(canvasCreasePattern); // Grab the 2D rendering contexts
 
-var ctxDrawing = canvasDrawing.getContext('2d');
-var ctxCreasePattern = canvasCreasePattern.getContext('2d'); // Grab references to DOM elements
+var ctxDrawing = canvasDrawing.getContext("2d");
+var ctxCreasePattern = canvasCreasePattern.getContext("2d"); // Grab references to DOM elements
 
-var buttonClear = document.getElementById('button-clear');
-var buttonSave = document.getElementById('button-save');
+var buttonClear = document.getElementById("button-clear");
+var buttonSave = document.getElementById("button-save");
 var pNumberOfPoints = document.getElementById("p-number-of-points"); // Add event listeners
 
-canvasDrawing.addEventListener('mousedown', addPoint);
-buttonClear.addEventListener('click', reset);
-buttonSave.addEventListener('click', save);
+canvasDrawing.addEventListener("mousedown", addPoint);
+buttonClear.addEventListener("click", reset);
+buttonSave.addEventListener("click", save);
 var generatingLine = new _generating.GeneratingLine();
 var generatingStrip;
-/** 
+/**
  * Exports the current crease pattern to a .FOLD file.
  */
 
 function save() {
   var fold = generatingStrip.exportFoldData();
-  var file = new File([JSON.stringify(fold, null, 4)], 'miura.fold', {
+  var file = new File([JSON.stringify(fold, null, 4)], "miura.fold", {
     type: "text/plain;charset=utf-8"
   });
   (0, _fileSaver.saveAs)(file);
 }
-/** 
+/**
  * Clears all active canvases.
  */
 
@@ -65,7 +65,7 @@ function clearCanvas() {
   ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
   ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
 }
-/** 
+/**
  * Clears all active canvases and resets the generating line.
  */
 
@@ -74,7 +74,7 @@ function reset() {
   clearCanvas();
   generatingLine.clear();
 }
-/** 
+/**
  * A callback function that adds a point at the specified cursor position.
  */
 
@@ -85,7 +85,7 @@ function addPoint(e) {
   pNumberOfPoints.innerHTML = "Number of Points: ".concat(generatingLine.length().toString());
   drawCanvas();
 }
-/** 
+/**
  * Draws all active canvases.
  */
 
@@ -152,26 +152,26 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 var uiColors = {
   generatingLine: {
-    line: '#948e8e',
-    point: '#576d94',
-    text: '#344054'
+    line: "#948e8e",
+    point: "#576d94",
+    text: "#344054"
   },
   generatingStrip: {
-    line: '#bab5b5',
-    point: '#d96448',
-    polygon: utils.convertHex('#b5a6a5', 50.0),
-    textBackground: '#fcfafa',
+    line: "#bab5b5",
+    point: "#d96448",
+    polygon: utils.convertHex("#b5a6a5", 50.0),
+    textBackground: "#fcfafa",
     angle: {
-      acute: '#bf3054',
-      obtuse: '#e3cc39'
+      acute: "#bf3054",
+      obtuse: "#e3cc39"
     }
   },
   creasePattern: {
     fold: {
-      mountain: '#d96448',
-      valley: '#768d87',
-      facet: '#c9ad47',
-      border: '#bab5b5'
+      mountain: "#d96448",
+      valley: "#768d87",
+      facet: "#c9ad47",
+      border: "#bab5b5"
     }
   }
 };
@@ -214,17 +214,17 @@ function () {
       for (var i = 0; i < this._points.length - 1; i++) {
         var pointA = this._points[i + 0];
         var pointB = this._points[i + 1];
-        ctx.strokeStyle = uiColors['generatingLine']['line'];
+        ctx.strokeStyle = uiColors["generatingLine"]["line"];
         ctx.beginPath();
         ctx.moveTo(pointA.x, pointA.y);
         ctx.lineTo(pointB.x, pointB.y);
         ctx.stroke();
-        ctx.fillStyle = uiColors['generatingLine']['point'];
+        ctx.fillStyle = uiColors["generatingLine"]["point"];
         pointA.draw(ctx, 2.0);
         pointB.draw(ctx, 2.0);
         var spacing = 4;
         ctx.font = "normal 10px Arial";
-        ctx.fillStyle = uiColors['generatingLine']['text'];
+        ctx.fillStyle = uiColors["generatingLine"]["text"];
         ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
         ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
       }
@@ -265,20 +265,18 @@ function () {
     key: "getPointsOrthogonalTo",
     value: function getPointsOrthogonalTo(pointA, pointB) {
       // A vector that points from `pointA` towards `pointB`
-      var direct = pointB.subtract(pointA).normalize(); // A vector orthogonal to `direct`
+      var heading = pointB.subtract(pointA).normalize(); // A vector orthogonal to `heading`
 
-      var ortho = new _vector["default"](direct.y, -direct.x, 0.0); // Keep the "handedness" of the line: `ortho` will always
-      // be pointing "left" from `direct`
+      var orthogonal = new _vector["default"](heading.y, -heading.x, 0.0); // Keep the "handedness" of the line: `orthogonal` will always
+      // be pointing "left" from `heading`
 
-      if (direct.cross(ortho).z < 0.0) {
-        ortho = ortho.multiplyScalar(-1.0);
+      if (heading.cross(orthogonal).z < 0.0) {
+        orthogonal = orthogonal.multiplyScalar(-1.0);
       }
 
-      ortho = ortho.multiplyScalar(this._stripWidth); // The two points "up" and "down"
+      orthogonal = orthogonal.multiplyScalar(this._stripWidth); // The two points "up" and "down"
 
-      var pointU = pointA.add(ortho);
-      var pointD = pointA.subtract(ortho);
-      return [pointU, pointD];
+      return [pointA.add(orthogonal), pointA.subtract(orthogonal)];
     }
   }, {
     key: "drawInfiniteLines",
@@ -286,7 +284,7 @@ function () {
       // The length of the "infinite" line segment: this is kind of silly, but it works for now
       var drawLength = 2000.0;
       ctx.save();
-      ctx.strokeStyle = uiColors['generatingStrip']['line'];
+      ctx.strokeStyle = uiColors["generatingStrip"]["line"];
       ctx.setLineDash([2, 2]);
 
       for (var i = 0; i < this._lineEquations.length; i++) {
@@ -318,7 +316,7 @@ function () {
     key: "drawIntersections",
     value: function drawIntersections(ctx) {
       ctx.save();
-      ctx.fillStyle = uiColors['generatingStrip']['point'];
+      ctx.fillStyle = uiColors["generatingStrip"]["point"];
 
       this._intersections.forEach(function (intersection) {
         return intersection.draw(ctx, 3.0);
@@ -332,7 +330,7 @@ function () {
       var _this = this;
 
       ctx.save();
-      ctx.fillStyle = uiColors['generatingStrip']['polygon'];
+      ctx.fillStyle = uiColors["generatingStrip"]["polygon"];
 
       this._stripPolygons.forEach(function (_ref) {
         var _ref2 = _slicedToArray(_ref, 4),
@@ -359,33 +357,40 @@ function () {
 
       for (var i = 1; i < this._generatingLine.length() - 1; i++) {
         // Grab a point and its immediate neighbors (previous and next) along the path
-        var pointA = this._generatingLine.points[i - 1];
-        var pointB = this._generatingLine.points[i + 0];
-        var pointC = this._generatingLine.points[i + 1];
-        var heading = pointB.subtract(pointA).normalize();
-        var next = pointC.subtract(pointB).normalize(); // The actual *major* fold angle that will need to be made at this point along the strip
+        var _this$_generatingLine = this._generatingLine.points.slice(i - 1, i + 2),
+            _this$_generatingLine2 = _slicedToArray(_this$_generatingLine, 3),
+            pointA = _this$_generatingLine2[0],
+            pointB = _this$_generatingLine2[1],
+            pointC = _this$_generatingLine2[2];
+
+        var _ref3 = [pointB.subtract(pointA).normalize(), pointC.subtract(pointB).normalize()],
+            heading = _ref3[0],
+            next = _ref3[1]; // The actual *major* fold angle that will need to be made at this point along the strip
 
         var foldAngle = Math.acos(heading.dot(next));
-        var lerpedColor = utils.lerpColor(uiColors['generatingStrip']['angle']['acute'], uiColors['generatingStrip']['angle']['obtuse'], foldAngle / Math.PI);
-        var startTheta = utils.atan2Wrapped(heading.y, heading.x);
-        var endTheta = utils.atan2Wrapped(next.y, next.x); // Keep the same directionality as the path curves throughout space
+        var lerpedColor = utils.lerpColor(uiColors["generatingStrip"]["angle"]["acute"], uiColors["generatingStrip"]["angle"]["obtuse"], foldAngle / Math.PI);
+        var _ref4 = [utils.atan2Wrapped(heading.y, heading.x), utils.atan2Wrapped(next.y, next.x)],
+            startTheta = _ref4[0],
+            endTheta = _ref4[1]; // Keep the same directionality as the path curves throughout space
 
         if (heading.cross(next).z < 0.0) {
-          var _ref3 = [endTheta, startTheta];
-          startTheta = _ref3[0];
-          endTheta = _ref3[1];
+          var _ref5 = [endTheta, startTheta];
+          startTheta = _ref5[0];
+          endTheta = _ref5[1];
         }
 
         var bisector = heading.bisector(next).normalize().multiplyScalar(25.0); // Display the angle (in degrees) as text
 
-        ctx.textAlign = bisector.x < 0.0 ? 'right' : 'left';
-        ctx.font = "bold 12px Courier New";
-        var unicodeDegrees = String.fromCharCode(176);
-        var unicodeBlock = String.fromCharCode(9608);
+        ctx.textAlign = bisector.x < 0.0 ? "right" : "left";
+        ctx.font = "bold 12px Courier New"; // Some unicode symbols
+
+        var _ref6 = [String.fromCharCode(176), String.fromCharCode(9608)],
+            unicodeDegrees = _ref6[0],
+            unicodeBlock = _ref6[1];
         var textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
         var textBackground = unicodeBlock.repeat(textDegrees.length); // Draw a small text box to display the angles (in degrees)
 
-        ctx.fillStyle = uiColors['generatingStrip']['textBackground'];
+        ctx.fillStyle = uiColors["generatingStrip"]["textBackground"];
         ctx.fillText(textBackground, pointB.x + bisector.x, pointB.y + bisector.y);
         ctx.fillStyle = lerpedColor;
         ctx.fillText(textDegrees, pointB.x + bisector.x, pointB.y + bisector.y); // Draw outer / inner arcs with different radii
@@ -406,55 +411,55 @@ function () {
     value: function drawCreasePattern(ctx) {
       var offset = this._stripWidth; // Shrink the crease pattern so that it fits on the canvas
 
-      var _utils$boundingBox = utils.boundingBox(this.vertices),
+      var _utils$boundingBox = utils.boundingBox(this._vertices),
           _utils$boundingBox2 = _slicedToArray(_utils$boundingBox, 4),
           minX = _utils$boundingBox2[0],
           maxX = _utils$boundingBox2[1],
           minY = _utils$boundingBox2[2],
           maxY = _utils$boundingBox2[3];
 
-      var currentW = maxX - minX;
-      var currentH = maxY - minY;
-      var desiredW = document.getElementById('canvas-crease-pattern').width - 2.0 * offset;
-      var desiredH = document.getElementById('canvas-crease-pattern').height - 2.0 * offset;
-      var scaleX = desiredW / currentW;
-      var scaleY = desiredH / currentH;
+      var currentW = maxX - minX,
+          currentH = maxY - minY;
+      var desiredW = document.getElementById("canvas-crease-pattern").width - 2.0 * offset;
+      var desiredH = document.getElementById("canvas-crease-pattern").height - 2.0 * offset;
+      var scaleX = desiredW / currentW,
+          scaleY = desiredH / currentH;
       ctx.save();
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
 
       try {
-        for (var _iterator = this.edges.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        for (var _iterator = this._edges.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
           var _step$value = _slicedToArray(_step.value, 2),
               index = _step$value[0],
               edge = _step$value[1];
 
           var _edge = _slicedToArray(edge, 2),
               a = _edge[0],
-              b = _edge[1]; //console.log(`i: ${index}, edge: ${edge} -> ${this.assignments[index]}`);
+              b = _edge[1]; //console.log(`i: ${index}, edge: ${edge} -> ${this._assignments[index]}`);
           // Color (and stipple) the line based on this edge's assignment
 
 
-          var assignment = this.assignments[index];
+          var assignment = this._assignments[index];
 
-          if (assignment === 'M') {
-            ctx.strokeStyle = uiColors['creasePattern']['fold']['mountain'];
+          if (assignment === "M") {
+            ctx.strokeStyle = uiColors["creasePattern"]["fold"]["mountain"];
             ctx.setLineDash([]);
-          } else if (assignment === 'V') {
-            ctx.strokeStyle = uiColors['creasePattern']['fold']['valley'];
+          } else if (assignment === "V") {
+            ctx.strokeStyle = uiColors["creasePattern"]["fold"]["valley"];
             ctx.setLineDash([1, 2]);
-          } else if (assignment === 'F') {
-            ctx.strokeStyle = uiColors['creasePattern']['fold']['facet'];
+          } else if (assignment === "F") {
+            ctx.strokeStyle = uiColors["creasePattern"]["fold"]["facet"];
             ctx.setLineDash([]);
-          } else if (assignment === 'B') {
-            ctx.strokeStyle = uiColors['creasePattern']['fold']['border'];
+          } else if (assignment === "B") {
+            ctx.strokeStyle = uiColors["creasePattern"]["fold"]["border"];
             ctx.setLineDash([]);
           }
 
           ctx.beginPath();
-          ctx.moveTo((this.vertices[a].x - minX) * scaleX + offset, (this.vertices[a].y - minY) * scaleY + offset);
-          ctx.lineTo((this.vertices[b].x - minX) * scaleX + offset, (this.vertices[b].y - minY) * scaleY + offset);
+          ctx.moveTo((this._vertices[a].x - minX) * scaleX + offset, (this._vertices[a].y - minY) * scaleY + offset);
+          ctx.lineTo((this._vertices[b].x - minX) * scaleX + offset, (this._vertices[b].y - minY) * scaleY + offset);
           ctx.closePath();
           ctx.stroke();
         }
@@ -499,7 +504,7 @@ function () {
       //    lines that run alongside the original line calculated in step (2)
       // 4. Finally, calculate the points of intersection between the set of lines
       //    calculated in step (3) for each pair of adjacent points
-      // 5. All of the points calculated in step (4) form the silhouette of the 
+      // 5. All of the points calculated in step (4) form the silhouette of the
       //    folded form, as long as we connect them as quads in CCW winding order
       this._lineEquations = [];
       this._intersections = [];
@@ -507,33 +512,30 @@ function () {
 
       for (var i = 0; i < this._generatingLine.length() - 1; i++) {
         // Grab a point and its immediate neighbor along the path
-        var _this$_generatingLine = this._generatingLine.points.slice(i, i + 2),
-            _this$_generatingLine2 = _slicedToArray(_this$_generatingLine, 2),
-            pointA = _this$_generatingLine2[0],
-            pointB = _this$_generatingLine2[1];
+        var _this$_generatingLine3 = this._generatingLine.points.slice(i, i + 2),
+            _this$_generatingLine4 = _slicedToArray(_this$_generatingLine3, 2),
+            pointA = _this$_generatingLine4[0],
+            pointB = _this$_generatingLine4[1]; // Remember: `y = mx + b` - plug in one point and find the y-intercept
 
-        var m = utils.slope(pointA, pointB); // Remember: `y = mx + b`
-        // Plug in one point and find the y-intercept
 
+        var m = utils.slope(pointA, pointB);
         var b = pointA.y - m * pointA.x;
 
         var _this$getPointsOrthog = this.getPointsOrthogonalTo(pointA, pointB),
             _this$getPointsOrthog2 = _slicedToArray(_this$getPointsOrthog, 2),
             _pointU = _this$getPointsOrthog2[0],
-            _pointD = _this$getPointsOrthog2[1]; // Add the first pair of points: subsequent points will be 
+            _pointD = _this$getPointsOrthog2[1]; // Add the first pair of points: subsequent points will be
         // added later during the line-line intersection routine
 
 
         if (i === 0) {
-          this._intersections.push(_pointU);
-
-          this._intersections.push(_pointD);
+          this._intersections.push(_pointU, _pointD);
         } // Find the y-intercepts of each of the two parallel lines:
-        // note that both lines have the same slope `m`
+        // note that both lines have the same slope
 
 
-        var bU = _pointU.y - m * _pointU.x;
-        var bD = _pointD.y - m * _pointD.x;
+        var bU = _pointU.y - m * _pointU.x,
+            bD = _pointD.y - m * _pointD.x;
 
         this._lineEquations.push([[m, bU], [m, bD]]);
       }
@@ -555,17 +557,15 @@ function () {
 
         var _this$_lineEquations$6 = _slicedToArray(this._lineEquations[_i2 + 1][1], 2),
             m3 = _this$_lineEquations$6[0],
-            b3 = _this$_lineEquations$6[1]; // Calculate the intersection between l0 and l3
+            b3 = _this$_lineEquations$6[1]; // Calculate the intersection between l0 and l3 and the intersection between l1 and l2
 
 
-        var intersectionA = utils.intersect(m0, b0, m3, b3); // Calculate the intersection between l1 and l2
-
-        var intersectionB = utils.intersect(m1, b1, m2, b2); // Push back points of intersection: note the order of insertion matters here
+        var _ref7 = [utils.intersect(m0, b0, m3, b3), utils.intersect(m1, b1, m2, b2)],
+            intersectionA = _ref7[0],
+            intersectionB = _ref7[1]; // Push back points of intersection: note the order of insertion matters here
         // for proper CCW winding order
 
-        this._intersections.push(intersectionB);
-
-        this._intersections.push(intersectionA);
+        this._intersections.push(intersectionB, intersectionA);
       } // Finally, add the last two points
 
 
@@ -576,9 +576,7 @@ function () {
           pointU = _this$getPointsOrthog4[0],
           pointD = _this$getPointsOrthog4[1];
 
-      this._intersections.push(pointU);
-
-      this._intersections.push(pointD);
+      this._intersections.push(pointU, pointD);
 
       for (var _i3 = 0; _i3 < this._intersections.length - 2; _i3 += 2) {
         // a-----d
@@ -626,13 +624,13 @@ function () {
       } // Top right corner, after rotation
 
 
-      var offset = polygonPoints[2].x; // If this is the last polygon to be added, add all 4 points, otherwise only 
+      var offset = polygonPoints[2].x; // If this is the last polygon to be added, add all 4 points, othe;rwise only
       // add the first two: we do this to avoid adding the same vertices multiple times
 
       var iterations = last ? 4 : 2;
 
       for (var _i4 = 0; _i4 < iterations; _i4++) {
-        this.vertices.push(polygonPoints[_i4].add(new _vector["default"](currentOffset, 0.0, 0.0)));
+        this._vertices.push(polygonPoints[_i4].add(new _vector["default"](currentOffset, 0.0, 0.0)));
       }
 
       return offset;
@@ -640,10 +638,10 @@ function () {
   }, {
     key: "generateCreasePattern",
     value: function generateCreasePattern() {
-      this.vertices = [];
-      this.edges = [];
-      this.faces = [];
-      this.assignments = [];
+      this._vertices = [];
+      this._edges = [];
+      this._faces = [];
+      this._assignments = [];
       var cumulativeOffset = 0.0;
       var flip = true; // The total number of closed polygons that form the silhouette of this strip
 
@@ -660,9 +658,9 @@ function () {
             d = startIndex + 3;
         var offset = this.rearrangePolygon(a, b, c, d, cumulativeOffset, flip, last);
         cumulativeOffset += offset; // Add this face, taking care to note whether the polygon was flipped
-        // 
+        //
         // Face vertices are assumed to have been added in the following order:
-        // 
+        //
         // 0--------3    1-----2
         // |       /     |      \ <-- Faces that were flipped are like this, instead
         // |      /      |       \
@@ -672,11 +670,13 @@ function () {
         // winding order <ul, ll, lr, ur>
 
         var indices = flip ? [b, a, d, c] : [a, b, c, d];
-        this.faces.push(indices); // The next polygon will need to be flipped, etc.
+
+        this._faces.push(indices); // The next polygon will need to be flipped, etc.
+
 
         flip = !flip;
       } // Reflect the entire pattern across the x-axis
-      // 
+      //
       // Procedure:
       //
       // 1. Begin iterating over each of the pre-existing (quad) faces
@@ -691,10 +691,10 @@ function () {
 
       var numberOfReflections = this._repeat - 1;
 
-      var facesCurrent = _toConsumableArray(this.faces);
+      var facesCurrent = _toConsumableArray(this._faces);
 
       for (var row = 0; row < numberOfReflections; row++) {
-        var _this$faces;
+        var _this$_faces;
 
         //console.log('Row:', row)
         var facesNext = [];
@@ -705,36 +705,35 @@ function () {
         try {
           for (var _iterator2 = facesCurrent.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
             var _step2$value = _slicedToArray(_step2.value, 2),
-                _i5 = _step2$value[0],
-                f = _step2$value[1];
+                faceIndex = _step2$value[0],
+                face = _step2$value[1];
 
-            var ul = f[0]; // Upper left
+            // Unpack face indices
+            var _face = _slicedToArray(face, 4),
+                upperLeft = _face[0],
+                lowerLeft = _face[1],
+                lowerRight = _face[2],
+                upperRight = _face[3]; // First, duplicate the two lower vertices across the positive x-axis
 
-            var ll = f[1]; // Lower left 
 
-            var lr = f[2]; // Lower right
+            var _ref8 = [this._vertices[lowerLeft].copy(), this._vertices[lowerRight].copy()],
+                vertexA = _ref8[0],
+                vertexB = _ref8[1];
+            var translateY = 4.0 * this._stripWidth;
+            vertexA.y += translateY;
+            vertexB.y += translateY; // Create the new set of face indices
 
-            var ur = f[3]; // Upper right
-            // First, duplicate the two lower vertices across the positive x-axis
-
-            var vertexA = this.vertices[ll].copy();
-            var vertexB = this.vertices[lr].copy();
-            var r = 4.0 * this._stripWidth;
-            vertexA.y += r;
-            vertexB.y += r; // Create the new set of face indices
-
-            var reflectedFace = [this.vertices.length + 0, ul, ur, this.vertices.length + 1]; // Push back the new pair of vertices: we only want to add the 
+            var reflectedFace = [this._vertices.length + 0, upperLeft, upperRight, this._vertices.length + 1]; // Push back the new pair of vertices: we only want to add the
             // left vertex to avoid duplicates - except for the last face
 
-            this.vertices.push(vertexA);
+            this._vertices.push(vertexA);
 
-            if (_i5 == facesCurrent.length - 1) {
-              this.vertices.push(vertexB);
-            } // Push back the new face
-
+            if (faceIndex == facesCurrent.length - 1) {
+              this._vertices.push(vertexB);
+            }
 
             facesNext.push(reflectedFace);
-          } // Add new faces to global array
+          } // Add the newly generated faces to the global crease pattern
 
         } catch (err) {
           _didIteratorError2 = true;
@@ -751,51 +750,54 @@ function () {
           }
         }
 
-        (_this$faces = this.faces).push.apply(_this$faces, facesNext); // Reset array of faces to be processed
+        (_this$_faces = this._faces).push.apply(_this$_faces, facesNext); // Set the "next" array of faces to be processed
 
 
         facesCurrent = [].concat(facesNext);
-      } // Construct edges and assignments	
-      //
-      // The number of faces per (repeated) row of the pattern
+      } // Construct edges and assignments
 
 
-      var facesPerRow = this.faces.length / this._repeat;
+      var facesPerRow = this._faces.length / this._repeat;
       var _iteratorNormalCompletion3 = true;
       var _didIteratorError3 = false;
       var _iteratorError3 = undefined;
 
       try {
-        for (var _iterator3 = this.faces.entries()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+        for (var _iterator3 = this._faces.entries()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
           var _step3$value = _slicedToArray(_step3.value, 2),
               faceIndex = _step3$value[0],
               face = _step3$value[1];
 
-          // Unpack the indices that form this face
-          var _face = _slicedToArray(face, 4),
-              a = _face[0],
-              b = _face[1],
-              c = _face[2],
-              d = _face[3]; // Now, circle around the face and add its edges, in order
+          // Unpack face indices
+          var _face2 = _slicedToArray(face, 4),
+              a = _face2[0],
+              b = _face2[1],
+              c = _face2[2],
+              d = _face2[3]; // Now, circle around the face and add its edges, in order
 
 
           for (var edgeIndex = 0; edgeIndex < face.length; edgeIndex++) {
             var xAxis = _vector["default"].xAxis(); // Calculate two of the interior angles of this face
 
 
-            var rightEdgeDirection = this.vertices[d].subtract(this.vertices[c]).normalize();
+            var rightEdgeDirection = this._vertices[d].subtract(this._vertices[c]).normalize();
+
             var thetaInteriorRight = Math.abs(xAxis.angle(rightEdgeDirection));
-            var leftEdgeDirection = this.vertices[a].subtract(this.vertices[b]).normalize();
-            var thetaInteriorLeft = Math.abs(xAxis.angle(leftEdgeDirection)); // Calculate the "row" and "column" indices of this face within the "grid" of faces 
+
+            var leftEdgeDirection = this._vertices[a].subtract(this._vertices[b]).normalize();
+
+            var thetaInteriorLeft = Math.abs(xAxis.angle(leftEdgeDirection)); // Calculate the "row" and "column" indices of this face within the "grid" of faces
             // that form the crease pattern
 
             var _row = Math.floor(faceIndex / facesPerRow);
 
-            var col = faceIndex % facesPerRow; // Only do this for even-numbered rows
+            var col = faceIndex % facesPerRow;
+            var isEvenRow = _row % 2 === 0; // Calculate complementary angles
 
-            if (_row % 2 === 0) {
-              thetaInteriorLeft = Math.PI - thetaInteriorLeft;
-              thetaInteriorRight = Math.PI - thetaInteriorRight;
+            if (isEvenRow) {
+              var _ref9 = [Math.PI - thetaInteriorLeft, Math.PI - thetaInteriorRight];
+              thetaInteriorLeft = _ref9[0];
+              thetaInteriorRight = _ref9[1];
             } // Is this face even or odd, along the horizontal axis?
 
 
@@ -803,47 +805,47 @@ function () {
 
             var isLeftEnd = faceIndex % facesPerRow === 0;
             var isRightEnd = faceIndex % facesPerRow === facesPerRow - 1;
-            var isTopEnd = _row === this._repeat - 1;
+            var isTopEnd = _row === numberOfReflections;
             var isBottomEnd = _row === 0; // This variable will not be changed for border edges
 
-            var assignment = 'B';
+            var assignment = "B";
 
             if (edgeIndex === 3 && !isTopEnd) {
               // Minor folds (horizontal) should alternate between M and V
               // across the strip
-              if (_row % 2 === 0) {
+              if (isEvenRow) {
                 // This is an odd row
-                assignment = parity ? 'M' : 'V';
+                assignment = parity ? "M" : "V";
               } else {
-                assignment = parity ? 'V' : 'M';
+                assignment = parity ? "V" : "M";
               }
             } else if (edgeIndex === 1 && !isBottomEnd) {
               // Minor folds (horizontal) should alternate between M and V
               // across the strip
-              if (_row % 2 != 0) {
+              if (!isEvenRow) {
                 // This is an odd row
-                assignment = parity ? 'M' : 'V';
+                assignment = parity ? "M" : "V";
               } else {
-                assignment = parity ? 'V' : 'M';
+                assignment = parity ? "V" : "M";
               }
             } else if (edgeIndex === 0 && !isLeftEnd) {
               // Left edges that are not at the very start of the strip
               if (thetaInteriorLeft < Math.PI * 0.5) {
                 // This is the side of the "bird's foot"
-                assignment = parity ? 'V' : 'M';
+                assignment = parity ? "V" : "M";
               } else {
-                assignment = parity ? 'M' : 'V';
+                assignment = parity ? "M" : "V";
               }
             } else if (edgeIndex === 2 && !isRightEnd) {
               // Right edges that are not at the very end of the strip
               if (thetaInteriorRight < Math.PI * 0.5) {
                 // This is the side of the "bird's foot"
-                assignment = parity ? 'M' : 'V';
+                assignment = parity ? "M" : "V";
               } else {
-                assignment = parity ? 'V' : 'M';
+                assignment = parity ? "V" : "M";
               }
             } // Add edge indices, modulo the number of indices in this face (4):
-            // 
+            //
             // (0, 1)
             // (1, 2)
             // (2, 3)
@@ -851,16 +853,16 @@ function () {
             //
 
 
-            var indexA = face[(edgeIndex + 0) % 4];
-            var indexB = face[(edgeIndex + 1) % 4];
-            var edgeIndices = [indexA, indexB]; // We are going to keep the edges sorted so that we can remove 
+            var edgeIndices = [face[(edgeIndex + 0) % 4], face[(edgeIndex + 1) % 4]]; // We are going to keep the edges sorted so that we can remove
             // duplicates later
 
             edgeIndices.sort(function (a, b) {
               return a - b;
             });
-            this.edges.push(edgeIndices);
-            this.assignments.push(assignment);
+
+            this._edges.push(edgeIndices);
+
+            this._assignments.push(assignment);
           }
         }
       } catch (err) {
@@ -881,24 +883,25 @@ function () {
   }, {
     key: "exportFoldData",
     value: function exportFoldData() {
-      // See: https://github.com/edemaine/fold
+      // See: `https://github.com/edemaine/fold`
       var fold = {
-        'file_spec': 1,
-        'file_creator': 'SGMO Generator',
-        'file_author': 'SGMO',
-        'file_classes': ['singleModel'],
-        'frame_title': 'A Procedurally Generated Semi-Generalized Miura-Ori',
-        'frame_classes': ['foldedForm'],
-        'frame_attributes': ['3D'],
-        'vertices_coords': [],
-        'edges_vertices': this.edges,
-        'faces_vertices': this.faces,
-        'edges_assignment': this.assignments
+        file_spec: 1,
+        file_creator: "SGMO Generator",
+        file_author: "SGMO",
+        file_classes: ["singleModel"],
+        frame_title: "A Procedurally Generated Semi-Generalized Miura-Ori",
+        frame_classes: ["foldedForm"],
+        frame_attributes: ["3D"],
+        vertices_coords: [],
+        edges_vertices: this._edges,
+        faces_vertices: this._faces,
+        edges_assignment: this._assignments
       }; // Vertices need to be reformatted
 
-      this.vertices.forEach(function (v) {
-        return fold['vertices_coords'].push([v.x, v.y, v.z]);
+      this._vertices.forEach(function (v) {
+        return fold["vertices_coords"].push([v.x, v.y, v.z]);
       });
+
       return fold;
     }
   }, {
@@ -915,6 +918,41 @@ function () {
     key: "repeat",
     get: function get() {
       return this._repeat;
+    }
+  }, {
+    key: "lineEquations",
+    get: function get() {
+      return this._lineEquations;
+    }
+  }, {
+    key: "intersections",
+    get: function get() {
+      return this._intersections;
+    }
+  }, {
+    key: "stripPolygons",
+    get: function get() {
+      return this._stripPolygons;
+    }
+  }, {
+    key: "vertices",
+    get: function get() {
+      return this._vertices;
+    }
+  }, {
+    key: "edges",
+    get: function get() {
+      return this._edges;
+    }
+  }, {
+    key: "faces",
+    get: function get() {
+      return this._faces;
+    }
+  }, {
+    key: "assignments",
+    get: function get() {
+      return this._assignments;
     }
   }]);
 
@@ -1030,7 +1068,7 @@ function boundingBox(vectors) {
   });
   return [minX, maxX, minY, maxY];
 }
-/** 
+/**
  * Calculates the slope of the line between two points.
  * @param {Vector} pointA - the first point (technically, vector)
  * @param {Vector} pointB - the second point (technically, vector)
@@ -1043,7 +1081,7 @@ function slope(pointA, pointB) {
   var den = pointB.x - pointA.x;
 
   if (den === 0.0) {
-    console.log('Denominator is zero!');
+    console.log("Denominator is zero!");
     den = espilon;
   }
 
@@ -1070,26 +1108,26 @@ function toRadians(x) {
 }
 
 function lerpColor(a, b, amount) {
-  var ah = parseInt(a.replace(/#/g, ''), 16);
+  var ah = parseInt(a.replace(/#/g, ""), 16);
   var ar = ah >> 16;
   var ag = ah >> 8 & 0xff;
   var ab = ah & 0xff;
-  var bh = parseInt(b.replace(/#/g, ''), 16);
+  var bh = parseInt(b.replace(/#/g, ""), 16);
   var br = bh >> 16;
   var bg = bh >> 8 & 0xff;
   var bb = bh & 0xff;
   var rr = ar + amount * (br - ar);
   var rg = ag + amount * (bg - ag);
   var rb = ab + amount * (bb - ab);
-  return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+  return "#" + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
 }
 
 function convertHex(hex, opacity) {
-  hex = hex.replace('#', '');
+  hex = hex.replace("#", "");
   var r = parseInt(hex.substring(0, 2), 16);
   var g = parseInt(hex.substring(2, 4), 16);
   var b = parseInt(hex.substring(4, 6), 16);
-  var result = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
+  var result = "rgba(" + r + "," + g + "," + b + "," + opacity / 100 + ")";
   return result;
 }
 

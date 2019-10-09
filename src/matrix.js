@@ -1,4 +1,4 @@
-import Vector from './vector';
+import Vector from "./vector";
 
 export default class Matrix {
 	constructor(columnA, columnB, columnC) {
@@ -45,14 +45,15 @@ export default class Matrix {
 	}
 
 	multiply(vec) {
-		const x = this.columnA.x * vec.x + this.columnB.x * vec.y + this.columnC.x * vec.z;
-		const y = this.columnA.y * vec.x + this.columnB.y * vec.y + this.columnC.y * vec.z;
-		const z = this.columnA.z * vec.x + this.columnB.z * vec.y + this.columnC.z * vec.z;
+		const x =
+			this.columnA.x * vec.x + this.columnB.x * vec.y + this.columnC.x * vec.z;
+		const y =
+			this.columnA.y * vec.x + this.columnB.y * vec.y + this.columnC.y * vec.z;
+		const z =
+			this.columnA.z * vec.x + this.columnB.z * vec.y + this.columnC.z * vec.z;
 
-		return new Vector(x, y, z);	
+		return new Vector(x, y, z);
 	}
 
-	print() {
-
-	}
+	print() {}
 }

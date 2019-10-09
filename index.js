@@ -1,6 +1,6 @@
-import { saveAs } from 'file-saver';
-import { GeneratingLine, GeneratingStrip } from './src/generating';
-import Vector from './src/vector';
+import { saveAs } from "file-saver";
+import { GeneratingLine, GeneratingStrip } from "./src/generating";
+import Vector from "./src/vector";
 
 // Running:
 //
@@ -13,17 +13,17 @@ import Vector from './src/vector';
 // 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
 
 // Create canvas element and append it to document body
-const divCanvas = document.getElementById('div-canvas');
+const divCanvas = document.getElementById("div-canvas");
 
-const canvasDrawing = document.createElement('canvas');
-canvasDrawing.setAttribute('id', 'canvas-drawing');
-canvasDrawing.setAttribute('class', 'drawing-upper');
+const canvasDrawing = document.createElement("canvas");
+canvasDrawing.setAttribute("id", "canvas-drawing");
+canvasDrawing.setAttribute("class", "drawing-upper");
 canvasDrawing.width = 600;
 canvasDrawing.height = 600;
 
-const canvasCreasePattern = document.createElement('canvas');
-canvasCreasePattern.setAttribute('id', 'canvas-crease-pattern');
-canvasCreasePattern.setAttribute('class', 'drawing-lower');
+const canvasCreasePattern = document.createElement("canvas");
+canvasCreasePattern.setAttribute("id", "canvas-crease-pattern");
+canvasCreasePattern.setAttribute("class", "drawing-lower");
 canvasCreasePattern.width = 600;
 canvasCreasePattern.height = 180;
 
@@ -31,40 +31,47 @@ divCanvas.appendChild(canvasDrawing);
 divCanvas.appendChild(canvasCreasePattern);
 
 // Grab the 2D rendering contexts
-const ctxDrawing = canvasDrawing.getContext('2d');
-const ctxCreasePattern = canvasCreasePattern.getContext('2d');
+const ctxDrawing = canvasDrawing.getContext("2d");
+const ctxCreasePattern = canvasCreasePattern.getContext("2d");
 
 // Grab references to DOM elements
-const buttonClear = document.getElementById('button-clear');
-const buttonSave = document.getElementById('button-save');
+const buttonClear = document.getElementById("button-clear");
+const buttonSave = document.getElementById("button-save");
 const pNumberOfPoints = document.getElementById("p-number-of-points");
 
 // Add event listeners
-canvasDrawing.addEventListener('mousedown', addPoint);
-buttonClear.addEventListener('click', reset);
-buttonSave.addEventListener('click', save);
+canvasDrawing.addEventListener("mousedown", addPoint);
+buttonClear.addEventListener("click", reset);
+buttonSave.addEventListener("click", save);
 
 let generatingLine = new GeneratingLine();
 let generatingStrip;
 
-/** 
+/**
  * Exports the current crease pattern to a .FOLD file.
  */
 function save() {
 	const fold = generatingStrip.exportFoldData();
-	const file = new File([JSON.stringify(fold, null, 4)], 'miura.fold', {type: "text/plain;charset=utf-8"});
+	const file = new File([JSON.stringify(fold, null, 4)], "miura.fold", {
+		type: "text/plain;charset=utf-8"
+	});
 	saveAs(file);
 }
 
-/** 
+/**
  * Clears all active canvases.
  */
 function clearCanvas() {
 	ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
-	ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
+	ctxCreasePattern.clearRect(
+		0,
+		0,
+		canvasCreasePattern.width,
+		canvasCreasePattern.height
+	);
 }
 
-/** 
+/**
  * Clears all active canvases and resets the generating line.
  */
 function reset() {
@@ -72,24 +79,26 @@ function reset() {
 	generatingLine.clear();
 }
 
-/** 
+/**
  * A callback function that adds a point at the specified cursor position.
  */
 function addPoint(e) {
-  generatingLine.push(new Vector(e.offsetX, e.offsetY, 0.0));
+	generatingLine.push(new Vector(e.offsetX, e.offsetY, 0.0));
 
-  // Add some text information to the UI
-  pNumberOfPoints.innerHTML = `Number of Points: ${generatingLine.length().toString()}`;
+	// Add some text information to the UI
+	pNumberOfPoints.innerHTML = `Number of Points: ${generatingLine
+		.length()
+		.toString()}`;
 
-  drawCanvas();
+	drawCanvas();
 }
 
-/** 
+/**
  * Draws all active canvases.
  */
 function drawCanvas() {
 	clearCanvas();
-	
+
 	// Only do this if there are at least 2 points to draw
 	if (generatingLine.length() > 1) {
 		generatingStrip = new GeneratingStrip(generatingLine, 10.0, 8);
@@ -99,6 +108,3 @@ function drawCanvas() {
 	// Always draw the line on top
 	generatingLine.draw(ctxDrawing);
 }
-
-
-
