@@ -11,6 +11,11 @@ import Vector from "./src/vector";
 //    d. `npm install --save-dev @babel/preset-env` <-- the preset needed for step (c)
 // 2. Install any other required node modules locally: `npm install`
 // 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
+//
+// To format:
+//
+// 1. Install JsPrettier: `npm install --global prettier`
+// 2. Open the Sublime command palette and install the IDE integration
 
 // Create canvas element and append it to document body
 const divCanvas = document.getElementById("div-canvas");

@@ -134,10 +134,7 @@ export class GeneratingStrip {
 	}
 
 	getPointsOrthogonalTo(pointA, pointB) {
-		// A vector that points from `pointA` towards `pointB`
 		const heading = pointB.subtract(pointA).normalize();
-
-		// A vector orthogonal to `heading`
 		let orthogonal = new Vector(heading.y, -heading.x, 0.0);
 
 		// Keep the "handedness" of the line: `orthogonal` will always
@@ -147,7 +144,7 @@ export class GeneratingStrip {
 		}
 		orthogonal = orthogonal.multiplyScalar(this._stripWidth);
 
-		// The two points "up" and "down"
+		// Add the two points "up" and "down"
 		return [pointA.add(orthogonal), pointA.subtract(orthogonal)];
 	}
 
@@ -161,23 +158,39 @@ export class GeneratingStrip {
 		ctx.setLineDash([2, 2]);
 
 		for (let i = 0; i < this._lineEquations.length; i++) {
-			let [mU, bU] = this._lineEquations[i][0];
-			let [mD, bD] = this._lineEquations[i][1];
+			let [mLeft, bLeft] = this._lineEquations[i][0];
+			let [mRight, bRight] = this._lineEquations[i][1];
 
-			const lineUStart = new Vector(-drawLength, mU * -drawLength + bU, 0.0);
-			const lineUEnd = new Vector(drawLength, mU * drawLength + bU, 0.0);
+			const lineLeftStart = new Vector(
+				-drawLength,
+				mLeft * -drawLength + bLeft,
+				0.0
+			);
+			const lineLeftEnd = new Vector(
+				drawLength,
+				mLeft * drawLength + bLeft,
+				0.0
+			);
 
 			ctx.beginPath();
-			ctx.moveTo(lineUStart.x, lineUStart.y);
-			ctx.lineTo(lineUEnd.x, lineUEnd.y);
+			ctx.moveTo(lineLeftStart.x, lineLeftStart.y);
+			ctx.lineTo(lineLeftEnd.x, lineLeftEnd.y);
 			ctx.stroke();
 
-			const lineDStart = new Vector(-drawLength, mD * -drawLength + bD, 0.0);
-			const lineDEnd = new Vector(drawLength, mD * drawLength + bD, 0.0);
+			const lineRightStart = new Vector(
+				-drawLength,
+				mRight * -drawLength + bRight,
+				0.0
+			);
+			const lineRightEnd = new Vector(
+				drawLength,
+				mRight * drawLength + bRight,
+				0.0
+			);
 
 			ctx.beginPath();
-			ctx.moveTo(lineDStart.x, lineDStart.y);
-			ctx.lineTo(lineDEnd.x, lineDEnd.y);
+			ctx.moveTo(lineRightStart.x, lineRightStart.y);
+			ctx.lineTo(lineRightEnd.x, lineRightEnd.y);
 			ctx.stroke();
 		}
 		ctx.restore();
@@ -366,17 +379,23 @@ export class GeneratingStrip {
 			const m = utils.slope(pointA, pointB);
 			const b = pointA.y - m * pointA.x;
 
-			const [pointU, pointD] = this.getPointsOrthogonalTo(pointA, pointB);
+			const [pointLeft, pointRight] = this.getPointsOrthogonalTo(
+				pointA,
+				pointB
+			);
 
 			// Add the first pair of points: subsequent points will be
 			// added later during the line-line intersection routine
 			if (i === 0) {
-				this._intersections.push(pointU, pointD);
+				this._intersections.push(pointLeft, pointRight);
 			}
 
 			// Find the y-intercepts of each of the two parallel lines:
 			// note that both lines have the same slope
-			const [bU, bD] = [pointU.y - m * pointU.x, pointD.y - m * pointD.x];
+			const [bU, bD] = [
+				pointLeft.y - m * pointLeft.x,
+				pointRight.y - m * pointRight.x
+			];
 			this._lineEquations.push([[m, bU], [m, bD]]);
 		}
 
@@ -402,33 +421,26 @@ export class GeneratingStrip {
 
 		// Finally, add the last two points
 		const l = this._generatingLine.length();
-		const [pointU, pointD] = this.getPointsOrthogonalTo(
+		const [pointLeft, pointRight] = this.getPointsOrthogonalTo(
 			this._generatingLine.points[l - 1],
 			this._generatingLine.points[l - 2]
 		);
-		this._intersections.push(pointU, pointD);
+		this._intersections.push(pointLeft, pointRight);
 
 		for (let i = 0; i < this._intersections.length - 2; i += 2) {
-			// a-----d
+			// 0-----3
 			// |     |
 			// |     |
-			// b-----c
-			const a = i + 0;
-			const b = i + 1;
-			const c = i + 2;
-			const d = i + 3;
-			this._stripPolygons.push([a, b, c, d]);
+			// 1-----2
+			const upperLeft = i + 0;
+			const lowerLeft = i + 1;
+			const lowerRight = i + 2;
+			const upperRight = i + 3;
+			this._stripPolygons.push([upperLeft, lowerLeft, lowerRight, upperRight]);
 		}
 	}
 
 	rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
-		// This function assumes the following vertex order per face:
-		//
-		// 0-----3
-		// |     |
-		// |     |
-		// 1-----2
-		//
 		// First, gather the points that form this particular polygon
 		let polygonPoints = [
 			this._intersections[a],
@@ -463,8 +475,8 @@ export class GeneratingStrip {
 
 		// If this is the last polygon to be added, add all 4 points, othe;rwise only
 		// add the first two: we do this to avoid adding the same vertices multiple times
-		const iterations = last ? 4 : 2;
-		for (let i = 0; i < iterations; i++) {
+		const numberOfVerticesToAdd = last ? 4 : 2;
+		for (let i = 0; i < numberOfVerticesToAdd; i++) {
 			this._vertices.push(
 				polygonPoints[i].add(new Vector(currentOffset, 0.0, 0.0))
 			);

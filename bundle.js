@@ -18,6 +18,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 //    d. `npm install --save-dev @babel/preset-env` <-- the preset needed for step (c)
 // 2. Install any other required node modules locally: `npm install`
 // 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
+//
+// To format:
+//
+// 1. Install JsPrettier: `npm install --global prettier`
+// 2. Open the Sublime command palette and install the IDE integration
 // Create canvas element and append it to document body
 var divCanvas = document.getElementById("div-canvas");
 var canvasDrawing = document.createElement("canvas");
@@ -264,9 +269,7 @@ function () {
   _createClass(GeneratingStrip, [{
     key: "getPointsOrthogonalTo",
     value: function getPointsOrthogonalTo(pointA, pointB) {
-      // A vector that points from `pointA` towards `pointB`
-      var heading = pointB.subtract(pointA).normalize(); // A vector orthogonal to `heading`
-
+      var heading = pointB.subtract(pointA).normalize();
       var orthogonal = new _vector["default"](heading.y, -heading.x, 0.0); // Keep the "handedness" of the line: `orthogonal` will always
       // be pointing "left" from `heading`
 
@@ -274,7 +277,7 @@ function () {
         orthogonal = orthogonal.multiplyScalar(-1.0);
       }
 
-      orthogonal = orthogonal.multiplyScalar(this._stripWidth); // The two points "up" and "down"
+      orthogonal = orthogonal.multiplyScalar(this._stripWidth); // Add the two points "up" and "down"
 
       return [pointA.add(orthogonal), pointA.subtract(orthogonal)];
     }
@@ -289,24 +292,24 @@ function () {
 
       for (var i = 0; i < this._lineEquations.length; i++) {
         var _this$_lineEquations$ = _slicedToArray(this._lineEquations[i][0], 2),
-            mU = _this$_lineEquations$[0],
-            bU = _this$_lineEquations$[1];
+            mLeft = _this$_lineEquations$[0],
+            bLeft = _this$_lineEquations$[1];
 
         var _this$_lineEquations$2 = _slicedToArray(this._lineEquations[i][1], 2),
-            mD = _this$_lineEquations$2[0],
-            bD = _this$_lineEquations$2[1];
+            mRight = _this$_lineEquations$2[0],
+            bRight = _this$_lineEquations$2[1];
 
-        var lineUStart = new _vector["default"](-drawLength, mU * -drawLength + bU, 0.0);
-        var lineUEnd = new _vector["default"](drawLength, mU * drawLength + bU, 0.0);
+        var lineLeftStart = new _vector["default"](-drawLength, mLeft * -drawLength + bLeft, 0.0);
+        var lineLeftEnd = new _vector["default"](drawLength, mLeft * drawLength + bLeft, 0.0);
         ctx.beginPath();
-        ctx.moveTo(lineUStart.x, lineUStart.y);
-        ctx.lineTo(lineUEnd.x, lineUEnd.y);
+        ctx.moveTo(lineLeftStart.x, lineLeftStart.y);
+        ctx.lineTo(lineLeftEnd.x, lineLeftEnd.y);
         ctx.stroke();
-        var lineDStart = new _vector["default"](-drawLength, mD * -drawLength + bD, 0.0);
-        var lineDEnd = new _vector["default"](drawLength, mD * drawLength + bD, 0.0);
+        var lineRightStart = new _vector["default"](-drawLength, mRight * -drawLength + bRight, 0.0);
+        var lineRightEnd = new _vector["default"](drawLength, mRight * drawLength + bRight, 0.0);
         ctx.beginPath();
-        ctx.moveTo(lineDStart.x, lineDStart.y);
-        ctx.lineTo(lineDEnd.x, lineDEnd.y);
+        ctx.moveTo(lineRightStart.x, lineRightStart.y);
+        ctx.lineTo(lineRightEnd.x, lineRightEnd.y);
         ctx.stroke();
       }
 
@@ -523,19 +526,19 @@ function () {
 
         var _this$getPointsOrthog = this.getPointsOrthogonalTo(pointA, pointB),
             _this$getPointsOrthog2 = _slicedToArray(_this$getPointsOrthog, 2),
-            _pointU = _this$getPointsOrthog2[0],
-            _pointD = _this$getPointsOrthog2[1]; // Add the first pair of points: subsequent points will be
+            _pointLeft = _this$getPointsOrthog2[0],
+            _pointRight = _this$getPointsOrthog2[1]; // Add the first pair of points: subsequent points will be
         // added later during the line-line intersection routine
 
 
         if (i === 0) {
-          this._intersections.push(_pointU, _pointD);
+          this._intersections.push(_pointLeft, _pointRight);
         } // Find the y-intercepts of each of the two parallel lines:
         // note that both lines have the same slope
 
 
-        var bU = _pointU.y - m * _pointU.x,
-            bD = _pointD.y - m * _pointD.x;
+        var bU = _pointLeft.y - m * _pointLeft.x,
+            bD = _pointRight.y - m * _pointRight.x;
 
         this._lineEquations.push([[m, bU], [m, bD]]);
       }
@@ -573,36 +576,27 @@ function () {
 
       var _this$getPointsOrthog3 = this.getPointsOrthogonalTo(this._generatingLine.points[l - 1], this._generatingLine.points[l - 2]),
           _this$getPointsOrthog4 = _slicedToArray(_this$getPointsOrthog3, 2),
-          pointU = _this$getPointsOrthog4[0],
-          pointD = _this$getPointsOrthog4[1];
+          pointLeft = _this$getPointsOrthog4[0],
+          pointRight = _this$getPointsOrthog4[1];
 
-      this._intersections.push(pointU, pointD);
+      this._intersections.push(pointLeft, pointRight);
 
       for (var _i3 = 0; _i3 < this._intersections.length - 2; _i3 += 2) {
-        // a-----d
+        // 0-----3
         // |     |
         // |     |
-        // b-----c
-        var a = _i3 + 0;
+        // 1-----2
+        var upperLeft = _i3 + 0;
+        var lowerLeft = _i3 + 1;
+        var lowerRight = _i3 + 2;
+        var upperRight = _i3 + 3;
 
-        var _b = _i3 + 1;
-
-        var c = _i3 + 2;
-        var d = _i3 + 3;
-
-        this._stripPolygons.push([a, _b, c, d]);
+        this._stripPolygons.push([upperLeft, lowerLeft, lowerRight, upperRight]);
       }
     }
   }, {
     key: "rearrangePolygon",
     value: function rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
-      // This function assumes the following vertex order per face:
-      //
-      // 0-----3
-      // |     |
-      // |     |
-      // 1-----2
-      //
       // First, gather the points that form this particular polygon
       var polygonPoints = [this._intersections[a], this._intersections[b], this._intersections[c], this._intersections[d]]; // A direction vector that runs parallel to this polygon's bottom edge
 
@@ -627,9 +621,9 @@ function () {
       var offset = polygonPoints[2].x; // If this is the last polygon to be added, add all 4 points, othe;rwise only
       // add the first two: we do this to avoid adding the same vertices multiple times
 
-      var iterations = last ? 4 : 2;
+      var numberOfVerticesToAdd = last ? 4 : 2;
 
-      for (var _i4 = 0; _i4 < iterations; _i4++) {
+      for (var _i4 = 0; _i4 < numberOfVerticesToAdd; _i4++) {
         this._vertices.push(polygonPoints[_i4].add(new _vector["default"](currentOffset, 0.0, 0.0)));
       }
 
