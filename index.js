@@ -47,27 +47,34 @@ buttonSave.addEventListener('click', save);
 let generatingLine = new GeneratingLine();
 let generatingStrip;
 
+/** 
+ * Exports the current crease pattern to a .FOLD file.
+ */
 function save() {
-
 	const fold = generatingStrip.exportFoldData();
 	const file = new File([JSON.stringify(fold, null, 4)], 'miura.fold', {type: "text/plain;charset=utf-8"});
 	saveAs(file);
-
-	// canvasCreasePattern.toBlob(function(blob) {
-	//     saveAs(blob, 'crease_pattern.png');
-	// });
 }
 
+/** 
+ * Clears all active canvases.
+ */
 function clearCanvas() {
 	ctxDrawing.clearRect(0, 0, canvasDrawing.width, canvasDrawing.height);
 	ctxCreasePattern.clearRect(0, 0, canvasCreasePattern.width, canvasCreasePattern.height);
 }
 
+/** 
+ * Clears all active canvases and resets the generating line.
+ */
 function reset() {
 	clearCanvas();
 	generatingLine.clear();
 }
 
+/** 
+ * A callback function that adds a point at the specified cursor position.
+ */
 function addPoint(e) {
   generatingLine.push(new Vector(e.offsetX, e.offsetY, 0.0));
 
@@ -77,6 +84,9 @@ function addPoint(e) {
   drawCanvas();
 }
 
+/** 
+ * Draws all active canvases.
+ */
 function drawCanvas() {
 	clearCanvas();
 	

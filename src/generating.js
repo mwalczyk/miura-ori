@@ -30,31 +30,39 @@ const uiColors = {
 
 export class GeneratingLine {
 	constructor() {
-		this.points = [];
-		this.shallowAngle = utils.toRadians(150.0);
+		this._points = [];
+		this._shallowAngle = utils.toRadians(30.0);
+	}
+
+	get points() {
+		return this._points;
+	}
+
+	get shallowAngle() {
+		return this._shallowAngle;
 	}
 
 	push(point) {
-		this.points.push(point);
+		this._points.push(point);
 	}
 
 	pop() {
-		this.points.pop();
+		this._points.pop();
 	}
 
 	length() {
-		return this.points.length;
+		return this._points.length;
 	}
 
 	clear() {
-		this.points.length = 0;
+		this._points.length = 0;
 	}
 
 	draw(ctx) {
 		ctx.save();
-		for (let i = 0; i < this.points.length - 1; i++) {
-				let pointA = this.points[i + 0];
-				let pointB = this.points[i + 1];
+		for (let i = 0; i < this._points.length - 1; i++) {
+				let pointA = this._points[i + 0];
+				let pointB = this._points[i + 1];
 				
 				ctx.strokeStyle = uiColors['generatingLine']['line'];
 				ctx.beginPath();
@@ -78,11 +86,23 @@ export class GeneratingLine {
 
 export class GeneratingStrip {
 	constructor(generatingLine, stripWidth, repeat) {
-		this.generatingLine = generatingLine;
-		this.stripWidth = stripWidth;
-		this.repeat = repeat;
+		this._generatingLine = generatingLine;
+		this._stripWidth = stripWidth;
+		this._repeat = repeat;
 		this.generateStrip();
 		this.generateCreasePattern();
+	}
+
+	get generatingLine() {
+		return this._generatingLine;
+	}
+
+	get stripWidth() {
+		return this._stripWidth;
+	}
+
+	get repeat() {
+		return this._repeat;
 	}
 
 	getPointsOrthogonalTo(pointA, pointB) {
@@ -97,7 +117,7 @@ export class GeneratingStrip {
 		if (direct.cross(ortho).z < 0.0) {
 			ortho = ortho.multiplyScalar(-1.0);
 		}
-		ortho = ortho.multiplyScalar(this.stripWidth);
+		ortho = ortho.multiplyScalar(this._stripWidth);
 
 		// The two points "up" and "down"
 		let pointU = pointA.add(ortho);
@@ -114,9 +134,10 @@ export class GeneratingStrip {
 
 		ctx.strokeStyle = uiColors['generatingStrip']['line'];
 		ctx.setLineDash([2, 2]);
-		for (let i = 0; i < this.lineEquations.length; i++) {
-			let [mU, bU] = this.lineEquations[i][0];
-			let [mD, bD] = this.lineEquations[i][1];
+
+		for (let i = 0; i < this._lineEquations.length; i++) {
+			let [mU, bU] = this._lineEquations[i][0];
+			let [mD, bD] = this._lineEquations[i][1];
 
 			const lineUStart = new Vector(-drawLength, mU * -drawLength + bU, 0.0);
 			const lineUEnd = new Vector(drawLength, mU * drawLength + bU, 0.0);
@@ -140,19 +161,19 @@ export class GeneratingStrip {
 	drawIntersections(ctx) {
 		ctx.save();
 		ctx.fillStyle = uiColors['generatingStrip']['point'];
-		this.intersections.forEach((intersection) => intersection.draw(ctx, 3.0));
+		this._intersections.forEach((intersection) => intersection.draw(ctx, 3.0));
 		ctx.restore();
 	}
 
-	drawPolygons(ctx) {
+	drawStripPolygons(ctx) {
 		ctx.save();
 		ctx.fillStyle = uiColors['generatingStrip']['polygon'];
-		this.polygons.forEach(([a, b, c, d]) => {
+		this._stripPolygons.forEach(([a, b, c, d]) => {
 			ctx.beginPath();
-			ctx.moveTo(this.intersections[a].x, this.intersections[a].y);
-			ctx.lineTo(this.intersections[b].x, this.intersections[b].y);
-			ctx.lineTo(this.intersections[c].x, this.intersections[c].y);
-			ctx.lineTo(this.intersections[d].x, this.intersections[d].y);
+			ctx.moveTo(this._intersections[a].x, this._intersections[a].y);
+			ctx.lineTo(this._intersections[b].x, this._intersections[b].y);
+			ctx.lineTo(this._intersections[c].x, this._intersections[c].y);
+			ctx.lineTo(this._intersections[d].x, this._intersections[d].y);
 			ctx.closePath();
 
 			ctx.fill();
@@ -163,11 +184,11 @@ export class GeneratingStrip {
 	drawAngles(ctx) {
 		ctx.save();
 
-		for (let i = 1; i < this.generatingLine.length() - 1; i++) {
-		  // Grab a point and its immediate neighbor along the path
-			const pointA = this.generatingLine.points[i - 1];
-			const pointB = this.generatingLine.points[i + 0];
-			const pointC = this.generatingLine.points[i + 1];
+		for (let i = 1; i < this._generatingLine.length() - 1; i++) {
+		  // Grab a point and its immediate neighbors (previous and next) along the path
+			const pointA = this._generatingLine.points[i - 1];
+			const pointB = this._generatingLine.points[i + 0];
+			const pointC = this._generatingLine.points[i + 1];
 
 			const heading = pointB.subtract(pointA).normalize();
 			const next = pointC.subtract(pointB).normalize();
@@ -199,11 +220,12 @@ export class GeneratingStrip {
 			const textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
 			const textBackground = unicodeBlock.repeat(textDegrees.length);
 
+			// Draw a small text box to display the angles (in degrees)
 			ctx.fillStyle = uiColors['generatingStrip']['textBackground'];
 			ctx.fillText(textBackground, pointB.x + bisector.x, pointB.y + bisector.y);
 
 			ctx.fillStyle = lerpedColor;
-			ctx.fillText(`${textDegrees}`, pointB.x + bisector.x, pointB.y + bisector.y);
+			ctx.fillText(textDegrees, pointB.x + bisector.x, pointB.y + bisector.y);
 
 			// Draw outer / inner arcs with different radii
 			ctx.strokeStyle = lerpedColor;
@@ -219,15 +241,14 @@ export class GeneratingStrip {
 	}
 
 	drawCreasePattern(ctx) {
-		const offset = this.stripWidth;
+		const offset = this._stripWidth;
 
-		// Shrink the CP down horizontally so that it fits on the canvas
+		// Shrink the crease pattern so that it fits on the canvas
 		let [minX, maxX, minY, maxY] = utils.boundingBox(this.vertices);
 		const currentW = maxX - minX;
 		const currentH = maxY - minY;
 		const desiredW = document.getElementById('canvas-crease-pattern').width - 2.0 * offset;
 		const desiredH = document.getElementById('canvas-crease-pattern').height - 2.0 * offset;
-
 		const scaleX = desiredW / currentW;
 		const scaleY = desiredH / currentH;
 
@@ -257,14 +278,13 @@ export class GeneratingStrip {
 			ctx.moveTo((this.vertices[a].x - minX) * scaleX + offset, (this.vertices[a].y - minY) * scaleY + offset);
 			ctx.lineTo((this.vertices[b].x - minX) * scaleX + offset, (this.vertices[b].y - minY) * scaleY + offset);
 			ctx.closePath();
-
 			ctx.stroke();
 		}
 		ctx.restore();
 	}
 
 	draw(ctxDrawing, ctxCreasePattern) {
-		this.drawPolygons(ctxDrawing);
+		this.drawStripPolygons(ctxDrawing);
 		this.drawInfiniteLines(ctxDrawing);
 		this.drawIntersections(ctxDrawing);
 		this.drawAngles(ctxDrawing);
@@ -287,14 +307,13 @@ export class GeneratingStrip {
 		//    calculated in step (3) for each pair of adjacent points
 		// 5. All of the points calculated in step (4) form the silhouette of the 
 		//    folded form, as long as we connect them as quads in CCW winding order
-		this.lineEquations = [];
-		this.intersections = [];
-		this.polygons = [];
+		this._lineEquations = [];
+		this._intersections = [];
+		this._stripPolygons = [];
 		
-		for (let i = 0; i < this.generatingLine.length() - 1; i++) {
+		for (let i = 0; i < this._generatingLine.length() - 1; i++) {
 		  // Grab a point and its immediate neighbor along the path
-			const pointA = this.generatingLine.points[i + 0];
-			const pointB = this.generatingLine.points[i + 1];
+			const [pointA, pointB] = this._generatingLine.points.slice(i, i + 2);
 			const m = utils.slope(pointA, pointB);
 			
 			// Remember: `y = mx + b`
@@ -306,25 +325,25 @@ export class GeneratingStrip {
 			// Add the first pair of points: subsequent points will be 
 			// added later during the line-line intersection routine
 			if (i === 0) {
-				this.intersections.push(pointU);
-				this.intersections.push(pointD);
+				this._intersections.push(pointU);
+				this._intersections.push(pointD);
 			}
 
 			// Find the y-intercepts of each of the two parallel lines:
 			// note that both lines have the same slope `m`
 			let bU = pointU.y - m * pointU.x;
 			let bD = pointD.y - m * pointD.x;
-			this.lineEquations.push([[m, bU], [m, bD]]);
+			this._lineEquations.push([[m, bU], [m, bD]]);
 		}
 
-		for (let i = 0; i < this.lineEquations.length- 1; i++) {
+		for (let i = 0; i < this._lineEquations.length- 1; i++) {
 			// The first pair of lines
-			const [m0, b0] = this.lineEquations[i + 0][0];
-			const [m1, b1] = this.lineEquations[i + 0][1];
+			const [m0, b0] = this._lineEquations[i + 0][0];
+			const [m1, b1] = this._lineEquations[i + 0][1];
 
 			// The next pair of lines
-			const [m2, b2] = this.lineEquations[i + 1][0];
-			const [m3, b3] = this.lineEquations[i + 1][1];
+			const [m2, b2] = this._lineEquations[i + 1][0];
+			const [m3, b3] = this._lineEquations[i + 1][1];
 
 			// Calculate the intersection between l0 and l3
 			const intersectionA = utils.intersect(m0, b0, m3, b3);
@@ -334,17 +353,17 @@ export class GeneratingStrip {
 
 			// Push back points of intersection: note the order of insertion matters here
 			// for proper CCW winding order
-			this.intersections.push(intersectionB);
-			this.intersections.push(intersectionA);
+			this._intersections.push(intersectionB);
+			this._intersections.push(intersectionA);
 		}
 
 		// Finally, add the last two points
-		const l = this.generatingLine.length();
-		const [pointU, pointD] = this.getPointsOrthogonalTo(this.generatingLine.points[l - 1], this.generatingLine.points[l - 2]);
-		this.intersections.push(pointU);
-		this.intersections.push(pointD);
+		const l = this._generatingLine.length();
+		const [pointU, pointD] = this.getPointsOrthogonalTo(this._generatingLine.points[l - 1], this._generatingLine.points[l - 2]);
+		this._intersections.push(pointU);
+		this._intersections.push(pointD);
 
-		for (let i = 0; i < this.intersections.length - 2; i += 2) {
+		for (let i = 0; i < this._intersections.length - 2; i += 2) {
 		  // a-----d
 			// |     |
 		  // |     |
@@ -353,7 +372,7 @@ export class GeneratingStrip {
 			const b = i + 1
 			const c = i + 2
 			const d = i + 3
-			this.polygons.push([a, b, c, d]);
+			this._stripPolygons.push([a, b, c, d]);
 		}
 	}
 
@@ -367,10 +386,10 @@ export class GeneratingStrip {
 			//
 			// First, gather the points that form this particular polygon
 			let polygonPoints = [
-				this.intersections[a], 
-				this.intersections[b], 
-				this.intersections[c], 
-				this.intersections[d]
+				this._intersections[a], 
+				this._intersections[b], 
+				this._intersections[c], 
+				this._intersections[d]
 			];
 
 			// A direction vector that runs parallel to this polygon's bottom edge
@@ -388,7 +407,7 @@ export class GeneratingStrip {
 				// Flip across the x-axis and move down by the strip width
 				if (flip) {
 					polygonPoints[i].y = -polygonPoints[i].y;
-					polygonPoints[i].y -= this.stripWidth * 2.0;
+					polygonPoints[i].y -= this._stripWidth * 2.0;
 				}
 			}
 
@@ -415,7 +434,7 @@ export class GeneratingStrip {
 		let flip = true;
 
 		// The total number of closed polygons that form the silhouette of this strip
-		let numberOfPolygons = this.intersections.length / 2;
+		let numberOfPolygons = this._intersections.length / 2;
 
 		for (let i = 0; i < numberOfPolygons - 1; i++) {
 			// 2, 4, 6, 8, etc.
@@ -458,7 +477,7 @@ export class GeneratingStrip {
 		//    corresponds to the new, reflected face
 		// 5. Concatenate the newly generated list of faces with the pre-existing
 		//    list of faces
-		const numberOfReflections = this.repeat - 1;
+		const numberOfReflections = this._repeat - 1;
 
 		let facesCurrent = [...this.faces];
 
@@ -476,7 +495,7 @@ export class GeneratingStrip {
 				let vertexA = this.vertices[ll].copy();
 				let vertexB = this.vertices[lr].copy();
 
-				const r = 4.0 * this.stripWidth;	
+				const r = 4.0 * this._stripWidth;	
 				vertexA.y += r; 
 				vertexB.y += r;
 
@@ -510,7 +529,7 @@ export class GeneratingStrip {
 		// Construct edges and assignments	
 		//
 		// The number of faces per (repeated) row of the pattern
-		const facesPerRow = this.faces.length / this.repeat; 
+		const facesPerRow = this.faces.length / this._repeat; 
 
 		for (let [faceIndex, face] of this.faces.entries()) {
 			// Unpack the indices that form this face
@@ -543,7 +562,7 @@ export class GeneratingStrip {
 				// Have we reached a face that contains a border edge?
 				const isLeftEnd = (faceIndex % facesPerRow === 0);
 				const isRightEnd = (faceIndex % facesPerRow === facesPerRow - 1);
-				const isTopEnd = (row === this.repeat - 1);
+				const isTopEnd = (row === this._repeat - 1);
 				const isBottomEnd = (row === 0);
 
 				// This variable will not be changed for border edges
