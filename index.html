@@ -1,22 +1,20 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
+	<head>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+		<meta content="utf-8" http-equiv="encoding" />
+		<link rel="stylesheet" type="text/css" href="style.css" />
+	</head>
 
-<head>
-	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-	<meta content="utf-8" http-equiv="encoding">
-	<link rel="stylesheet" type="text/css" href="style.css">
-</head>
+	<body>
+		<div id="div-menu" class="menu">
+			<button id="button-clear" class="menu-button">Clear</button>
+			<button id="button-save" class="menu-button">Save as .FOLD</button>
+			<p id="p-number-of-points" class="menu-label"></p>
+		</div>
 
-<body>
-	<div id="div-menu" class="menu">
-		<button id="button-clear" class="menu-button">Clear</button>
-		<button id="button-save" class="menu-button">Save as .FOLD</button>  
-		<p id="p-number-of-points" class="menu-label"></p>
-	</div>
+		<div id="div-canvas" class="drawing-area"></div>
 
-	<div id="div-canvas" class="drawing-area"></div>
-
-  <script src="./bundle.js"></script>
-</body>
-
+		<script src="./bundle.js"></script>
+	</body>
 </html>
