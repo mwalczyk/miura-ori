@@ -8,6 +8,15 @@
 ## Description
 A drawing tool that creates [Miura-ori crease patterns](https://en.wikipedia.org/wiki/Miura_fold) from an arbitrary, user-defined cross-section. You can use the tool at the [following URL](https://mwalczyk.github.io/cp/).
 
+Miura-ori are an interesting form of rigid origami that were initially discovered by Koryo Miura. They are "rigid" in the sense that they can transition smoothly from an unfolded state to a folded state without any bending or shearing of the parallelogram faces. They were even used by the Japanese space program to build deployable solar panel arrays! A "semigeneralized" Miura-ori (a term coined by Robert Lang, I believe) is a Miura-ori with an arbitrary cross-section. From Lang's book:
+
+> A semigeneralized surface can take on any arbitrary cross section in one direction, but it exhibits strict periodicity in the other
+(which is the reason  for the “semi” part of “semigeneralized”). 
+>
+> Lang, Robert J. "Twists, Tilings, and Tessellations" (p. 131)
+
+Ultimately, the tool exports a .FOLD file, which contains a description of the vertices, edges, faces, crease assignments (mountain vs. valley fold, etc.), and target fold angles that form the resulting crease pattern. This file can then be loaded into a rigid origami simulator, such as [Amanda Ghassaei's](http://apps.amandaghassaei.com/OrigamiSimulator/), that will simulate the folding of the crease pattern in 3D space.
+
 ## Tested On
 - Firefox
 
