@@ -31,7 +31,8 @@ const uiColors = {
 export class GeneratingLine {
 	constructor() {
 		this._points = [];
-		this._shallowAngle = utils.toRadians(30.0);
+		this._shallowAngle = utils.toRadians(150.0);
+		this._checkShallowAngle = true;
 	}
 
 	get points() {
@@ -43,6 +44,48 @@ export class GeneratingLine {
 	}
 
 	push(point) {
+		if (this._checkShallowAngle && this._points.length > 1) {
+			// The three points that will be used to construct a shallow angle divot
+			const [pointA, pointB, pointC] = [
+				this._points[this._points.length - 2],
+				this._points[this._points.length - 1],
+				point.copy()
+			];
+
+			// Points `a`, `b`, and `c` for a 3-point polyline segment:
+			//
+			//              c
+			//				 		 /
+			//			    	/
+			// 		a ---- b
+			//
+			const [toAFromB, toCFromB] = [
+				pointA.subtract(pointB).normalize(),
+				pointC.subtract(pointB).normalize()
+			];
+			const theta = toAFromB.angle(toCFromB);
+
+			// The "height" + "width" of each shallow-angle divot
+			const [divotW, divotH] = [4.0, 20.0];
+
+			if (theta > this._shallowAngle) {
+				// Add 3 points around `b` (the middle point): first, delete `b`
+				this.pop();
+				const bisector = toAFromB.bisector(toCFromB).normalize();
+
+				// Add point on line `b` -> `a`, close to `b`
+				const divotPointA = pointB.add(toAFromB.multiplyScalar(divotW));
+
+				// Add point along bisector
+				const divotPointB = pointB.add(bisector.multiplyScalar(divotH));
+
+				// Add point on line `c` -> `b`, close to `b`
+				const divotPointC = pointB.add(toCFromB.multiplyScalar(divotW));
+
+				this._points.push(divotPointA, divotPointB, divotPointC);
+			}
+		}
+
 		this._points.push(point);
 	}
 
@@ -61,8 +104,8 @@ export class GeneratingLine {
 	draw(ctx) {
 		ctx.save();
 		for (let i = 0; i < this._points.length - 1; i++) {
-			let pointA = this._points[i + 0];
-			let pointB = this._points[i + 1];
+
+			const [pointA, pointB] = this._points.slice(i, i + 2);
 
 			ctx.strokeStyle = uiColors["generatingLine"]["line"];
 			ctx.beginPath();
@@ -70,9 +113,10 @@ export class GeneratingLine {
 			ctx.lineTo(pointB.x, pointB.y);
 			ctx.stroke();
 
+			const pointRadius = 2.0;
 			ctx.fillStyle = uiColors["generatingLine"]["point"];
-			pointA.draw(ctx, 2.0);
-			pointB.draw(ctx, 2.0);
+			pointA.draw(ctx, pointRadius);
+			pointB.draw(ctx, pointRadius);
 
 			const spacing = 4;
 			ctx.font = "normal 10px Arial";
@@ -301,9 +345,9 @@ export class GeneratingStrip {
 		let [minX, maxX, minY, maxY] = utils.boundingBox(this._vertices);
 		const [currentW, currentH] = [maxX - minX, maxY - minY];
 		const desiredW =
-			document.getElementById("canvas-crease-pattern").width - 2.0 * offset;
+			document.getElementById("canvas_crease_pattern").width - 2.0 * offset;
 		const desiredH =
-			document.getElementById("canvas-crease-pattern").height - 2.0 * offset;
+			document.getElementById("canvas_crease_pattern").height - 2.0 * offset;
 		const [scaleX, scaleY] = [desiredW / currentW, desiredH / currentH];
 
 		ctx.save();
@@ -717,11 +761,29 @@ export class GeneratingStrip {
 			vertices_coords: [],
 			edges_vertices: this._edges,
 			faces_vertices: this._faces,
-			edges_assignment: this._assignments
+			edges_assignment: this._assignments,
+			edges_foldAngles: []
 		};
 
 		// Vertices need to be reformatted
-		this._vertices.forEach(v => fold["vertices_coords"].push([v.x, v.y, v.z]));
+		const scale = 1.0;
+		this._vertices.forEach(v =>
+			fold["vertices_coords"].push([
+				v.x * scale,
+				v.y * scale * 4.0,
+				v.z * scale
+			])
+		);
+
+		this._assignments.forEach(a => {
+			if (a === "M") {
+				fold["edges_foldAngles"].push(-Math.PI);
+			} else if (a === "V") {
+				fold["edges_foldAngles"].push(Math.PI);
+			} else {
+				fold["edges_foldAngles"].push(0.0);
+			}
+		});
 
 		return fold;
 	}

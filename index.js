@@ -18,17 +18,17 @@ import Vector from "./src/vector";
 // 2. Open the Sublime command palette and install the IDE integration
 
 // Create canvas element and append it to document body
-const divCanvas = document.getElementById("div-canvas");
+const divCanvas = document.getElementById("div_canvas");
 
 const canvasDrawing = document.createElement("canvas");
-canvasDrawing.setAttribute("id", "canvas-drawing");
-canvasDrawing.setAttribute("class", "drawing-upper");
+canvasDrawing.setAttribute("id", "canvas_drawing");
+canvasDrawing.setAttribute("class", "drawing_upper");
 canvasDrawing.width = 600;
 canvasDrawing.height = 600;
 
 const canvasCreasePattern = document.createElement("canvas");
-canvasCreasePattern.setAttribute("id", "canvas-crease-pattern");
-canvasCreasePattern.setAttribute("class", "drawing-lower");
+canvasCreasePattern.setAttribute("id", "canvas_crease_pattern");
+canvasCreasePattern.setAttribute("class", "drawing_lower");
 canvasCreasePattern.width = 600;
 canvasCreasePattern.height = 180;
 
@@ -40,14 +40,16 @@ const ctxDrawing = canvasDrawing.getContext("2d");
 const ctxCreasePattern = canvasCreasePattern.getContext("2d");
 
 // Grab references to DOM elements
-const buttonClear = document.getElementById("button-clear");
-const buttonSave = document.getElementById("button-save");
-const pNumberOfPoints = document.getElementById("p-number-of-points");
+const buttonClear = document.getElementById("button_clear");
+const buttonSave = document.getElementById("button_save");
+const pNumberOfPoints = document.getElementById("p_number_of_points");
+const inputRepeat = document.getElementById("input_repeat");
 
 // Add event listeners
 canvasDrawing.addEventListener("mousedown", addPoint);
 buttonClear.addEventListener("click", reset);
 buttonSave.addEventListener("click", save);
+inputRepeat.addEventListener("input", () => drawCanvas());
 
 let generatingLine = new GeneratingLine();
 let generatingStrip;
@@ -106,7 +108,7 @@ function drawCanvas() {
 
 	// Only do this if there are at least 2 points to draw
 	if (generatingLine.length() > 1) {
-		generatingStrip = new GeneratingStrip(generatingLine, 10.0, 8);
+		generatingStrip = new GeneratingStrip(generatingLine, 10.0, inputRepeat.value);
 		generatingStrip.draw(ctxDrawing, ctxCreasePattern);
 	}
 

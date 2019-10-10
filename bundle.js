@@ -24,15 +24,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "d
 // 1. Install JsPrettier: `npm install --global prettier`
 // 2. Open the Sublime command palette and install the IDE integration
 // Create canvas element and append it to document body
-var divCanvas = document.getElementById("div-canvas");
+var divCanvas = document.getElementById("div_canvas");
 var canvasDrawing = document.createElement("canvas");
-canvasDrawing.setAttribute("id", "canvas-drawing");
-canvasDrawing.setAttribute("class", "drawing-upper");
+canvasDrawing.setAttribute("id", "canvas_drawing");
+canvasDrawing.setAttribute("class", "drawing_upper");
 canvasDrawing.width = 600;
 canvasDrawing.height = 600;
 var canvasCreasePattern = document.createElement("canvas");
-canvasCreasePattern.setAttribute("id", "canvas-crease-pattern");
-canvasCreasePattern.setAttribute("class", "drawing-lower");
+canvasCreasePattern.setAttribute("id", "canvas_crease_pattern");
+canvasCreasePattern.setAttribute("class", "drawing_lower");
 canvasCreasePattern.width = 600;
 canvasCreasePattern.height = 180;
 divCanvas.appendChild(canvasDrawing);
@@ -41,13 +41,17 @@ divCanvas.appendChild(canvasCreasePattern); // Grab the 2D rendering contexts
 var ctxDrawing = canvasDrawing.getContext("2d");
 var ctxCreasePattern = canvasCreasePattern.getContext("2d"); // Grab references to DOM elements
 
-var buttonClear = document.getElementById("button-clear");
-var buttonSave = document.getElementById("button-save");
-var pNumberOfPoints = document.getElementById("p-number-of-points"); // Add event listeners
+var buttonClear = document.getElementById("button_clear");
+var buttonSave = document.getElementById("button_save");
+var pNumberOfPoints = document.getElementById("p_number_of_points");
+var inputRepeat = document.getElementById("input_repeat"); // Add event listeners
 
 canvasDrawing.addEventListener("mousedown", addPoint);
 buttonClear.addEventListener("click", reset);
 buttonSave.addEventListener("click", save);
+inputRepeat.addEventListener("input", function () {
+  return drawCanvas();
+});
 var generatingLine = new _generating.GeneratingLine();
 var generatingStrip;
 /**
@@ -99,7 +103,7 @@ function drawCanvas() {
   clearCanvas(); // Only do this if there are at least 2 points to draw
 
   if (generatingLine.length() > 1) {
-    generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0, 8);
+    generatingStrip = new _generating.GeneratingStrip(generatingLine, 10.0, inputRepeat.value);
     generatingStrip.draw(ctxDrawing, ctxCreasePattern);
   } // Always draw the line on top
 
@@ -188,12 +192,49 @@ function () {
     _classCallCheck(this, GeneratingLine);
 
     this._points = [];
-    this._shallowAngle = utils.toRadians(30.0);
+    this._shallowAngle = utils.toRadians(150.0);
+    this._checkShallowAngle = true;
   }
 
   _createClass(GeneratingLine, [{
     key: "push",
     value: function push(point) {
+      if (this._checkShallowAngle && this._points.length > 1) {
+        // The three points that will be used to construct a shallow angle divot
+        var _ref = [this._points[this._points.length - 2], this._points[this._points.length - 1], point.copy()],
+            pointA = _ref[0],
+            pointB = _ref[1],
+            pointC = _ref[2]; // Points `a`, `b`, and `c` for a 3-point polyline segment:
+        //
+        //              c
+        //				 		 /
+        //			    	/
+        // 		a ---- b
+        //
+
+        var _ref2 = [pointA.subtract(pointB).normalize(), pointC.subtract(pointB).normalize()],
+            toAFromB = _ref2[0],
+            toCFromB = _ref2[1];
+        var theta = toAFromB.angle(toCFromB); // The "height" + "width" of each shallow-angle divot
+
+        var divotW = 4.0,
+            divotH = 20.0;
+
+        if (theta > this._shallowAngle) {
+          // Add 3 points around `b` (the middle point): first, delete `b`
+          this.pop();
+          var bisector = toAFromB.bisector(toCFromB).normalize(); // Add point on line `b` -> `a`, close to `b`
+
+          var divotPointA = pointB.add(toAFromB.multiplyScalar(divotW)); // Add point along bisector
+
+          var divotPointB = pointB.add(bisector.multiplyScalar(divotH)); // Add point on line `c` -> `b`, close to `b`
+
+          var divotPointC = pointB.add(toCFromB.multiplyScalar(divotW));
+
+          this._points.push(divotPointA, divotPointB, divotPointC);
+        }
+      }
+
       this._points.push(point);
     }
   }, {
@@ -217,16 +258,20 @@ function () {
       ctx.save();
 
       for (var i = 0; i < this._points.length - 1; i++) {
-        var pointA = this._points[i + 0];
-        var pointB = this._points[i + 1];
+        var _this$_points$slice = this._points.slice(i, i + 2),
+            _this$_points$slice2 = _slicedToArray(_this$_points$slice, 2),
+            pointA = _this$_points$slice2[0],
+            pointB = _this$_points$slice2[1];
+
         ctx.strokeStyle = uiColors["generatingLine"]["line"];
         ctx.beginPath();
         ctx.moveTo(pointA.x, pointA.y);
         ctx.lineTo(pointB.x, pointB.y);
         ctx.stroke();
+        var pointRadius = 2.0;
         ctx.fillStyle = uiColors["generatingLine"]["point"];
-        pointA.draw(ctx, 2.0);
-        pointB.draw(ctx, 2.0);
+        pointA.draw(ctx, pointRadius);
+        pointB.draw(ctx, pointRadius);
         var spacing = 4;
         ctx.font = "normal 10px Arial";
         ctx.fillStyle = uiColors["generatingLine"]["text"];
@@ -335,12 +380,12 @@ function () {
       ctx.save();
       ctx.fillStyle = uiColors["generatingStrip"]["polygon"];
 
-      this._stripPolygons.forEach(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 4),
-            a = _ref2[0],
-            b = _ref2[1],
-            c = _ref2[2],
-            d = _ref2[3];
+      this._stripPolygons.forEach(function (_ref3) {
+        var _ref4 = _slicedToArray(_ref3, 4),
+            a = _ref4[0],
+            b = _ref4[1],
+            c = _ref4[2],
+            d = _ref4[3];
 
         ctx.beginPath();
         ctx.moveTo(_this._intersections[a].x, _this._intersections[a].y);
@@ -366,20 +411,20 @@ function () {
             pointB = _this$_generatingLine2[1],
             pointC = _this$_generatingLine2[2];
 
-        var _ref3 = [pointB.subtract(pointA).normalize(), pointC.subtract(pointB).normalize()],
-            heading = _ref3[0],
-            next = _ref3[1]; // The actual *major* fold angle that will need to be made at this point along the strip
+        var _ref5 = [pointB.subtract(pointA).normalize(), pointC.subtract(pointB).normalize()],
+            heading = _ref5[0],
+            next = _ref5[1]; // The actual *major* fold angle that will need to be made at this point along the strip
 
         var foldAngle = Math.acos(heading.dot(next));
         var lerpedColor = utils.lerpColor(uiColors["generatingStrip"]["angle"]["acute"], uiColors["generatingStrip"]["angle"]["obtuse"], foldAngle / Math.PI);
-        var _ref4 = [utils.atan2Wrapped(heading.y, heading.x), utils.atan2Wrapped(next.y, next.x)],
-            startTheta = _ref4[0],
-            endTheta = _ref4[1]; // Keep the same directionality as the path curves throughout space
+        var _ref6 = [utils.atan2Wrapped(heading.y, heading.x), utils.atan2Wrapped(next.y, next.x)],
+            startTheta = _ref6[0],
+            endTheta = _ref6[1]; // Keep the same directionality as the path curves throughout space
 
         if (heading.cross(next).z < 0.0) {
-          var _ref5 = [endTheta, startTheta];
-          startTheta = _ref5[0];
-          endTheta = _ref5[1];
+          var _ref7 = [endTheta, startTheta];
+          startTheta = _ref7[0];
+          endTheta = _ref7[1];
         }
 
         var bisector = heading.bisector(next).normalize().multiplyScalar(25.0); // Display the angle (in degrees) as text
@@ -387,9 +432,9 @@ function () {
         ctx.textAlign = bisector.x < 0.0 ? "right" : "left";
         ctx.font = "bold 12px Courier New"; // Some unicode symbols
 
-        var _ref6 = [String.fromCharCode(176), String.fromCharCode(9608)],
-            unicodeDegrees = _ref6[0],
-            unicodeBlock = _ref6[1];
+        var _ref8 = [String.fromCharCode(176), String.fromCharCode(9608)],
+            unicodeDegrees = _ref8[0],
+            unicodeBlock = _ref8[1];
         var textDegrees = Math.trunc(utils.toDegrees(foldAngle)).toString().concat(unicodeDegrees);
         var textBackground = unicodeBlock.repeat(textDegrees.length); // Draw a small text box to display the angles (in degrees)
 
@@ -423,8 +468,8 @@ function () {
 
       var currentW = maxX - minX,
           currentH = maxY - minY;
-      var desiredW = document.getElementById("canvas-crease-pattern").width - 2.0 * offset;
-      var desiredH = document.getElementById("canvas-crease-pattern").height - 2.0 * offset;
+      var desiredW = document.getElementById("canvas_crease_pattern").width - 2.0 * offset;
+      var desiredH = document.getElementById("canvas_crease_pattern").height - 2.0 * offset;
       var scaleX = desiredW / currentW,
           scaleY = desiredH / currentH;
       ctx.save();
@@ -563,9 +608,9 @@ function () {
             b3 = _this$_lineEquations$6[1]; // Calculate the intersection between l0 and l3 and the intersection between l1 and l2
 
 
-        var _ref7 = [utils.intersect(m0, b0, m3, b3), utils.intersect(m1, b1, m2, b2)],
-            intersectionA = _ref7[0],
-            intersectionB = _ref7[1]; // Push back points of intersection: note the order of insertion matters here
+        var _ref9 = [utils.intersect(m0, b0, m3, b3), utils.intersect(m1, b1, m2, b2)],
+            intersectionA = _ref9[0],
+            intersectionB = _ref9[1]; // Push back points of intersection: note the order of insertion matters here
         // for proper CCW winding order
 
         this._intersections.push(intersectionB, intersectionA);
@@ -710,9 +755,9 @@ function () {
                 upperRight = _face[3]; // First, duplicate the two lower vertices across the positive x-axis
 
 
-            var _ref8 = [this._vertices[lowerLeft].copy(), this._vertices[lowerRight].copy()],
-                vertexA = _ref8[0],
-                vertexB = _ref8[1];
+            var _ref10 = [this._vertices[lowerLeft].copy(), this._vertices[lowerRight].copy()],
+                vertexA = _ref10[0],
+                vertexB = _ref10[1];
             var translateY = 4.0 * this._stripWidth;
             vertexA.y += translateY;
             vertexB.y += translateY; // Create the new set of face indices
@@ -789,9 +834,9 @@ function () {
             var isEvenRow = _row % 2 === 0; // Calculate complementary angles
 
             if (isEvenRow) {
-              var _ref9 = [Math.PI - thetaInteriorLeft, Math.PI - thetaInteriorRight];
-              thetaInteriorLeft = _ref9[0];
-              thetaInteriorRight = _ref9[1];
+              var _ref11 = [Math.PI - thetaInteriorLeft, Math.PI - thetaInteriorRight];
+              thetaInteriorLeft = _ref11[0];
+              thetaInteriorRight = _ref11[1];
             } // Is this face even or odd, along the horizontal axis?
 
 
@@ -889,11 +934,24 @@ function () {
         vertices_coords: [],
         edges_vertices: this._edges,
         faces_vertices: this._faces,
-        edges_assignment: this._assignments
+        edges_assignment: this._assignments,
+        edges_foldAngles: []
       }; // Vertices need to be reformatted
 
+      var scale = 1.0;
+
       this._vertices.forEach(function (v) {
-        return fold["vertices_coords"].push([v.x, v.y, v.z]);
+        return fold["vertices_coords"].push([v.x * scale, v.y * scale * 4.0, v.z * scale]);
+      });
+
+      this._assignments.forEach(function (a) {
+        if (a === "M") {
+          fold["edges_foldAngles"].push(-Math.PI);
+        } else if (a === "V") {
+          fold["edges_foldAngles"].push(Math.PI);
+        } else {
+          fold["edges_foldAngles"].push(0.0);
+        }
       });
 
       return fold;

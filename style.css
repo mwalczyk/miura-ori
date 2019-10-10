@@ -7,7 +7,7 @@ body {
 	margin: 0;
 }
 
-.drawing-area {
+.drawing_area {
 	/* Reference: https://css-tricks.com/snippets/css/a-guide-to-flexbox */
 	display: flex;
 	flex-direction: column;
@@ -15,20 +15,25 @@ body {
 	margin: 0px 10px;
 }
 
-.drawing-upper {
+.drawing_upper {
 	background-color: #f2f0f0;
 }
 
-.drawing-lower {
+.drawing_lower {
 	background-color: #f2f0f0;
 }
 
 .menu {
 	margin: 10px 10px;
-	vertical-align: top;
+	display: flex;	
+	align-items: center;
 }
 
-.menu-button {
+.menu_item {
+	margin: 0px 4px;
+}
+
+.menu_button {
 	background-color: #768d87;
 	border-radius: 5px;
 	border: 0px;
@@ -41,19 +46,44 @@ body {
 	padding: 8px 16px;
 	text-decoration: none;
 }
-.menu-button:hover {
+.menu_button:hover {
 	background-color: #6c7c7c;
 }
-.menu-button:active {
+.menu_button:active {
 	position: relative;
 	top: 1px;
 }
 
-.menu-label {
+.menu_label {
 	color: #bab5b5;
 	font-family: Arial;
 	font-size: 10px;
 	font-weight: normal;
 	text-decoration: none;
 	display: inline-block;
+}
+
+.menu_debug {
+	font-weight: bold;
+}
+
+.menu_slider {
+  width: 100px; 
+  height: 10px; 
+  background: #d9d4d4; 
+  opacity: 0.7;
+  transition: opacity .2s;
+}
+
+.menu_slider:hover {
+  opacity: 1; 
+}
+
+.menu_slider::-moz-range-thumb {
+  width: 10px; 
+  height: 10px; 
+  border: 0px;
+  border-radius: 2px;
+  background: #768d87; 
+  cursor: pointer; 
 }
