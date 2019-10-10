@@ -22,9 +22,10 @@ Ultimately, the tool exports a .FOLD file, which contains a description of the v
 
 ## To Build
 1. Clone this repo.
-2. Make sure [npm](https://www.npmjs.com/) is installed and in your `PATH`.
-3. Inside the repo, run: `npm install`.
-4. Open `index.html` in your browser.
+2. Make sure [npm](https://www.npmjs.com/) is installed and in your `PATH`: to bundle the included scripts, you will also need to ensure that `browserify` is installed.
+3. Inside the repo, run: `npm install` to install dependencies.
+4. Finally, run: `npm run bundle`.
+5. Open `index.html` in your browser.
 
 ## To Use
 Use your mouse to add points in the upper canvas. The points will be connected to form a polyline, which, in turn, will be used to generate the Miura-ori crease pattern (displayed in the lower canvas). Additional controls:
