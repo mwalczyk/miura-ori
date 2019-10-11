@@ -37,6 +37,10 @@ export default class Vector {
 		return new Vector(this.x / sc, this.y / sc, this.z / sc);
 	}
 
+	reverse() {
+		return this.multiplyScalar(-1.0);
+	}
+
 	cross(other) {
 		let x = this.y * other.z - this.z * other.y;
 		let y = this.z * other.x - this.x * other.z;
@@ -53,8 +57,7 @@ export default class Vector {
 	}
 
 	normalize() {
-		let l = this.length();
-		return this.divideScalar(l);
+		return this.divideScalar(this.length());
 	}
 
 	angle(other) {

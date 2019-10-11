@@ -1,5 +1,7 @@
 import { saveAs } from "file-saver";
-import { GeneratingLine, GeneratingStrip } from "./src/generating";
+
+import { GeneratingLine } from "./src/generating_line";
+import { GeneratingStrip } from "./src/generating_strip";
 import Vector from "./src/vector";
 
 // Running:
@@ -10,7 +12,7 @@ import Vector from "./src/vector";
 //    c. `npm install -g babelify` <-- used to transpile ES6 to ES5 (for imports/exports, etc.)
 //    d. `npm install --save-dev @babel/preset-env` <-- the preset needed for step (c)
 // 2. Install any other required node modules locally: `npm install`
-// 3. In the root directory run: `watchify index.js -t [ babelify --presets [ @babel/preset-env ] ] -o bundle.js`
+// 3. In the root directory run: `npm run bundle-watch`
 //
 // To format:
 //
@@ -53,12 +55,13 @@ inputRepeat.addEventListener("input", () => drawCanvas());
 
 let generatingLine = new GeneratingLine();
 let generatingStrip;
+let creasePattern;
 
 /**
  * Exports the current crease pattern to a .FOLD file.
  */
 function save() {
-	const fold = generatingStrip.exportFoldData();
+	const fold = creasePattern.exportFoldData();
 	const file = new File([JSON.stringify(fold, null, 4)], "miura.fold", {
 		type: "text/plain;charset=utf-8"
 	});
@@ -109,7 +112,10 @@ function drawCanvas() {
 	// Only do this if there are at least 2 points to draw
 	if (generatingLine.length() > 1) {
 		generatingStrip = new GeneratingStrip(generatingLine, 10.0, inputRepeat.value);
-		generatingStrip.draw(ctxDrawing, ctxCreasePattern);
+		creasePattern = generatingStrip.generateCreasePattern();
+		
+		generatingStrip.draw(ctxDrawing);
+		creasePattern.draw(ctxCreasePattern);
 	}
 
 	// Always draw the line on top

@@ -1,132 +1,19 @@
+import { CreasePattern } from "./crease_pattern";
+import { GeneratingLine } from "./generating_line";
 import Vector from "./vector";
 import Matrix from "./matrix";
 import * as utils from "./utils";
 
-const uiColors = {
-	generatingLine: {
-		line: "#948e8e",
-		point: "#576d94",
-		text: "#344054"
-	},
-	generatingStrip: {
-		line: "#bab5b5",
-		point: "#d96448",
-		polygon: utils.convertHex("#b5a6a5", 50.0),
-		textBackground: "#fcfafa",
-		angle: {
-			acute: "#bf3054",
-			obtuse: "#e3cc39"
-		}
-	},
-	creasePattern: {
-		fold: {
-			mountain: "#d96448",
-			valley: "#768d87",
-			facet: "#c9ad47",
-			border: "#bab5b5"
-		}
+const colors = {
+	line: "#bab5b5",
+	point: "#d96448",
+	polygon: utils.convertHex("#b5a6a5", 50.0),
+	textBackground: "#fcfafa",
+	angle: {
+		acute: "#bf3054",
+		obtuse: "#e3cc39"
 	}
 };
-
-export class GeneratingLine {
-	constructor() {
-		this._points = [];
-		this._shallowAngle = utils.toRadians(150.0);
-		this._checkShallowAngle = true;
-	}
-
-	get points() {
-		return this._points;
-	}
-
-	get shallowAngle() {
-		return this._shallowAngle;
-	}
-
-	push(point) {
-		if (this._checkShallowAngle && this._points.length > 1) {
-			// The three points that will be used to construct a shallow angle divot
-			const [pointA, pointB, pointC] = [
-				this._points[this._points.length - 2],
-				this._points[this._points.length - 1],
-				point.copy()
-			];
-
-			// Points `a`, `b`, and `c` for a 3-point polyline segment:
-			//
-			//              c
-			//				 		 /
-			//			    	/
-			// 		a ---- b
-			//
-			const [toAFromB, toCFromB] = [
-				pointA.subtract(pointB).normalize(),
-				pointC.subtract(pointB).normalize()
-			];
-			const theta = toAFromB.angle(toCFromB);
-
-			// The "height" + "width" of each shallow-angle divot
-			const [divotW, divotH] = [4.0, 20.0];
-
-			if (theta > this._shallowAngle) {
-				// Add 3 points around `b` (the middle point): first, delete `b`
-				this.pop();
-				const bisector = toAFromB.bisector(toCFromB).normalize();
-
-				// Add point on line `b` -> `a`, close to `b`
-				const divotPointA = pointB.add(toAFromB.multiplyScalar(divotW));
-
-				// Add point along bisector
-				const divotPointB = pointB.add(bisector.multiplyScalar(divotH));
-
-				// Add point on line `c` -> `b`, close to `b`
-				const divotPointC = pointB.add(toCFromB.multiplyScalar(divotW));
-
-				this._points.push(divotPointA, divotPointB, divotPointC);
-			}
-		}
-
-		this._points.push(point);
-	}
-
-	pop() {
-		this._points.pop();
-	}
-
-	length() {
-		return this._points.length;
-	}
-
-	clear() {
-		this._points.length = 0;
-	}
-
-	draw(ctx) {
-		ctx.save();
-		for (let i = 0; i < this._points.length - 1; i++) {
-
-			const [pointA, pointB] = this._points.slice(i, i + 2);
-
-			ctx.strokeStyle = uiColors["generatingLine"]["line"];
-			ctx.beginPath();
-			ctx.moveTo(pointA.x, pointA.y);
-			ctx.lineTo(pointB.x, pointB.y);
-			ctx.stroke();
-
-			const pointRadius = 2.0;
-			ctx.fillStyle = uiColors["generatingLine"]["point"];
-			pointA.draw(ctx, pointRadius);
-			pointB.draw(ctx, pointRadius);
-
-			const spacing = 4;
-			ctx.font = "normal 10px Arial";
-			ctx.fillStyle = uiColors["generatingLine"]["text"];
-			ctx.fillText((i + 0).toString(), pointA.x + spacing, pointA.y);
-			ctx.fillText((i + 1).toString(), pointB.x + spacing, pointB.y);
-		}
-		ctx.restore();
-	}
-}
 
 export class GeneratingStrip {
 	constructor(generatingLine, stripWidth, repeat) {
@@ -161,22 +48,6 @@ export class GeneratingStrip {
 		return this._stripPolygons;
 	}
 
-	get vertices() {
-		return this._vertices;
-	}
-
-	get edges() {
-		return this._edges;
-	}
-
-	get faces() {
-		return this._faces;
-	}
-
-	get assignments() {
-		return this._assignments;
-	}
-
 	getPointsOrthogonalTo(pointA, pointB) {
 		const heading = pointB.subtract(pointA).normalize();
 		let orthogonal = new Vector(heading.y, -heading.x, 0.0);
@@ -184,7 +55,7 @@ export class GeneratingStrip {
 		// Keep the "handedness" of the line: `orthogonal` will always
 		// be pointing "left" from `heading`
 		if (heading.cross(orthogonal).z < 0.0) {
-			orthogonal = orthogonal.multiplyScalar(-1.0);
+			orthogonal = orthogonal.reverse();
 		}
 		orthogonal = orthogonal.multiplyScalar(this._stripWidth);
 
@@ -198,7 +69,7 @@ export class GeneratingStrip {
 
 		ctx.save();
 
-		ctx.strokeStyle = uiColors["generatingStrip"]["line"];
+		ctx.strokeStyle = colors["line"];
 		ctx.setLineDash([2, 2]);
 
 		for (let i = 0; i < this._lineEquations.length; i++) {
@@ -242,14 +113,14 @@ export class GeneratingStrip {
 
 	drawIntersections(ctx) {
 		ctx.save();
-		ctx.fillStyle = uiColors["generatingStrip"]["point"];
+		ctx.fillStyle = colors["point"];
 		this._intersections.forEach(intersection => intersection.draw(ctx, 3.0));
 		ctx.restore();
 	}
 
 	drawStripPolygons(ctx) {
 		ctx.save();
-		ctx.fillStyle = uiColors["generatingStrip"]["polygon"];
+		ctx.fillStyle = colors["polygon"];
 		this._stripPolygons.forEach(([a, b, c, d]) => {
 			ctx.beginPath();
 			ctx.moveTo(this._intersections[a].x, this._intersections[a].y);
@@ -280,8 +151,8 @@ export class GeneratingStrip {
 			// The actual *major* fold angle that will need to be made at this point along the strip
 			const foldAngle = Math.acos(heading.dot(next));
 			const lerpedColor = utils.lerpColor(
-				uiColors["generatingStrip"]["angle"]["acute"],
-				uiColors["generatingStrip"]["angle"]["obtuse"],
+				colors["angle"]["acute"],
+				colors["angle"]["obtuse"],
 				foldAngle / Math.PI
 			);
 
@@ -315,7 +186,7 @@ export class GeneratingStrip {
 			const textBackground = unicodeBlock.repeat(textDegrees.length);
 
 			// Draw a small text box to display the angles (in degrees)
-			ctx.fillStyle = uiColors["generatingStrip"]["textBackground"];
+			ctx.fillStyle = colors["textBackground"];
 			ctx.fillText(
 				textBackground,
 				pointB.x + bisector.x,
@@ -327,6 +198,7 @@ export class GeneratingStrip {
 
 			// Draw outer / inner arcs with different radii
 			ctx.strokeStyle = lerpedColor;
+
 			ctx.beginPath();
 			ctx.arc(pointB.x, pointB.y, 16.0, startTheta, endTheta);
 			ctx.stroke();
@@ -338,63 +210,11 @@ export class GeneratingStrip {
 		ctx.restore();
 	}
 
-	drawCreasePattern(ctx) {
-		const offset = this._stripWidth;
-
-		// Shrink the crease pattern so that it fits on the canvas
-		let [minX, maxX, minY, maxY] = utils.boundingBox(this._vertices);
-		const [currentW, currentH] = [maxX - minX, maxY - minY];
-		const desiredW =
-			document.getElementById("canvas_crease_pattern").width - 2.0 * offset;
-		const desiredH =
-			document.getElementById("canvas_crease_pattern").height - 2.0 * offset;
-		const [scaleX, scaleY] = [desiredW / currentW, desiredH / currentH];
-
-		ctx.save();
-		for (let [index, edge] of this._edges.entries()) {
-			let [a, b] = edge;
-			//console.log(`i: ${index}, edge: ${edge} -> ${this._assignments[index]}`);
-
-			// Color (and stipple) the line based on this edge's assignment
-			const assignment = this._assignments[index];
-
-			if (assignment === "M") {
-				ctx.strokeStyle = uiColors["creasePattern"]["fold"]["mountain"];
-				ctx.setLineDash([]);
-			} else if (assignment === "V") {
-				ctx.strokeStyle = uiColors["creasePattern"]["fold"]["valley"];
-				ctx.setLineDash([1, 2]);
-			} else if (assignment === "F") {
-				ctx.strokeStyle = uiColors["creasePattern"]["fold"]["facet"];
-				ctx.setLineDash([]);
-			} else if (assignment === "B") {
-				ctx.strokeStyle = uiColors["creasePattern"]["fold"]["border"];
-				ctx.setLineDash([]);
-			}
-
-			ctx.beginPath();
-			ctx.moveTo(
-				(this._vertices[a].x - minX) * scaleX + offset,
-				(this._vertices[a].y - minY) * scaleY + offset
-			);
-			ctx.lineTo(
-				(this._vertices[b].x - minX) * scaleX + offset,
-				(this._vertices[b].y - minY) * scaleY + offset
-			);
-			ctx.closePath();
-			ctx.stroke();
-		}
-		ctx.restore();
-	}
-
-	draw(ctxDrawing, ctxCreasePattern) {
-		this.drawStripPolygons(ctxDrawing);
-		this.drawInfiniteLines(ctxDrawing);
-		this.drawIntersections(ctxDrawing);
-		this.drawAngles(ctxDrawing);
-
-		// Drawn to a different canvas element
-		this.drawCreasePattern(ctxCreasePattern);
+	draw(ctx) {
+		this.drawStripPolygons(ctx);
+		this.drawInfiniteLines(ctx);
+		this.drawIntersections(ctx);
+		this.drawAngles(ctx);
 	}
 
 	generateStrip() {
@@ -486,7 +306,7 @@ export class GeneratingStrip {
 
 	rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
 		// First, gather the points that form this particular polygon
-		let polygonPoints = [
+		let rearrangedPoints = [
 			this._intersections[a],
 			this._intersections[b],
 			this._intersections[c],
@@ -494,52 +314,38 @@ export class GeneratingStrip {
 		];
 
 		// A direction vector that runs parallel to this polygon's bottom edge
-		const bottomEdge = polygonPoints[2].subtract(polygonPoints[1]);
-		const topLeftCorner = polygonPoints[0].copy();
+		const bottomEdge = rearrangedPoints[2].subtract(rearrangedPoints[1]);
+		const topLeftCorner = rearrangedPoints[0].copy();
 
 		// Rotate the bottom edge to be aligned with the x-axis
 		const theta = bottomEdge.signedAngle(Vector.xAxis());
 		const rotationMatrix = Matrix.rotationZ(-theta);
 
-		for (let i = 0; i < polygonPoints.length; i++) {
+		for (let i = 0; i < rearrangedPoints.length; i++) {
 			// Rotate around the top-left corner of the polygon (the first point)
-			polygonPoints[i] = rotationMatrix.multiply(
-				polygonPoints[i].subtract(topLeftCorner)
+			rearrangedPoints[i] = rotationMatrix.multiply(
+				rearrangedPoints[i].subtract(topLeftCorner)
 			);
 
 			// Flip across the x-axis and move down by the strip width
 			if (flip) {
-				polygonPoints[i].y = -polygonPoints[i].y;
-				polygonPoints[i].y -= this._stripWidth * 2.0;
+				rearrangedPoints[i].y = -rearrangedPoints[i].y;
+				rearrangedPoints[i].y -= this._stripWidth * 2.0;
 			}
 		}
 
-		// Top right corner, after rotation
-		const offset = polygonPoints[2].x;
-
-		// If this is the last polygon to be added, add all 4 points, othe;rwise only
-		// add the first two: we do this to avoid adding the same vertices multiple times
-		const numberOfVerticesToAdd = last ? 4 : 2;
-		for (let i = 0; i < numberOfVerticesToAdd; i++) {
-			this._vertices.push(
-				polygonPoints[i].add(new Vector(currentOffset, 0.0, 0.0))
-			);
-		}
-
-		return offset;
+		return rearrangedPoints;
 	}
 
 	generateCreasePattern() {
-		this._vertices = [];
-		this._edges = [];
-		this._faces = [];
-		this._assignments = [];
+		let creasePattern = new CreasePattern();
+		let edgeData = [];
 
-		let cumulativeOffset = 0.0;
-		let flip = true;
-
+		// "Flatten" the polygons that for the silhouette of the current strip
 		// The total number of closed polygons that form the silhouette of this strip
 		const numberOfPolygons = this._intersections.length / 2;
+		let cumulativeOffset = 0.0;
+		let flip = true;
 
 		for (let i = 0; i < numberOfPolygons - 1; i++) {
 			// 2, 4, 6, 8, etc.
@@ -554,7 +360,16 @@ export class GeneratingStrip {
 				startIndex + 2,
 				startIndex + 3
 			];
-			const offset = this.rearrangePolygon(
+			// let rearrangedPoints = [
+			// 	this._intersections[a],
+			// 	this._intersections[b],
+			// 	this._intersections[c],
+			// 	this._intersections[d]
+		 //  ];
+
+			const lengthTopEdge = 
+
+			let rearrangedPoints = this.rearrangePolygon(
 				a,
 				b,
 				c,
@@ -563,7 +378,19 @@ export class GeneratingStrip {
 				flip,
 				last
 			);
+			// If this is the last polygon to be added, add all 4 points, otherwise only
+			// add the first two: we do this to avoid adding the same vertices multiple times
+			const toAdd = last ? 4 : 2;
+
+			// Top right corner, after rotation (but before translation)
+			const offset = rearrangedPoints[2].x;
+
+			for (let i = 0; i < rearrangedPoints.length; i++) {
+				rearrangedPoints[i].x += cumulativeOffset;
+			}
 			cumulativeOffset += offset;
+
+			creasePattern.vertices.push(...rearrangedPoints.slice(0, toAdd));
 
 			// Add this face, taking care to note whether the polygon was flipped
 			//
@@ -577,7 +404,7 @@ export class GeneratingStrip {
 			// So, reorient the flipped polygons here, ensuring the same CCW
 			// winding order <ul, ll, lr, ur>
 			const indices = flip ? [b, a, d, c] : [a, b, c, d];
-			this._faces.push(indices);
+			creasePattern.faces.push(indices);
 
 			// The next polygon will need to be flipped, etc.
 			flip = !flip;
@@ -597,10 +424,9 @@ export class GeneratingStrip {
 		//    list of faces
 		const numberOfReflections = this._repeat - 1;
 
-		let facesCurrent = [...this._faces];
+		let facesCurrent = [...creasePattern.faces];
 
 		for (let row = 0; row < numberOfReflections; row++) {
-			//console.log('Row:', row)
 			let facesNext = [];
 
 			for (let [faceIndex, face] of facesCurrent.entries()) {
@@ -609,8 +435,8 @@ export class GeneratingStrip {
 
 				// First, duplicate the two lower vertices across the positive x-axis
 				let [vertexA, vertexB] = [
-					this._vertices[lowerLeft].copy(),
-					this._vertices[lowerRight].copy()
+					creasePattern.vertices[lowerLeft].copy(),
+					creasePattern.vertices[lowerRight].copy()
 				];
 
 				const translateY = 4.0 * this._stripWidth;
@@ -619,33 +445,33 @@ export class GeneratingStrip {
 
 				// Create the new set of face indices
 				const reflectedFace = [
-					this._vertices.length + 0,
+					creasePattern.vertices.length + 0,
 					upperLeft,
 					upperRight,
-					this._vertices.length + 1
+					creasePattern.vertices.length + 1
 				];
 
 				// Push back the new pair of vertices: we only want to add the
 				// left vertex to avoid duplicates - except for the last face
-				this._vertices.push(vertexA);
+				creasePattern.vertices.push(vertexA);
 				if (faceIndex == facesCurrent.length - 1) {
-					this._vertices.push(vertexB);
+					creasePattern.vertices.push(vertexB);
 				}
 
 				facesNext.push(reflectedFace);
 			}
 
-			// Add the newly generated faces to the global crease pattern
-			this._faces.push(...facesNext);
+			// Add the newly generated faces to the crease pattern
+			creasePattern.faces.push(...facesNext);
 
 			// Set the "next" array of faces to be processed
 			facesCurrent = [...facesNext];
 		}
 
 		// Construct edges and assignments
-		const facesPerRow = this._faces.length / this._repeat;
+		const facesPerRow = creasePattern.faces.length / this._repeat;
 
-		for (let [faceIndex, face] of this._faces.entries()) {
+		for (let [faceIndex, face] of creasePattern.faces.entries()) {
 			// Unpack face indices
 			let [a, b, c, d] = face;
 
@@ -654,12 +480,12 @@ export class GeneratingStrip {
 				const xAxis = Vector.xAxis();
 
 				// Calculate two of the interior angles of this face
-				let rightEdgeDirection = this._vertices[d]
-					.subtract(this._vertices[c])
+				let rightEdgeDirection = creasePattern.vertices[d]
+					.subtract(creasePattern.vertices[c])
 					.normalize();
 				let thetaInteriorRight = Math.abs(xAxis.angle(rightEdgeDirection));
-				let leftEdgeDirection = this._vertices[a]
-					.subtract(this._vertices[b])
+				let leftEdgeDirection = creasePattern.vertices[a]
+					.subtract(creasePattern.vertices[b])
 					.normalize();
 				let thetaInteriorLeft = Math.abs(xAxis.angle(leftEdgeDirection));
 
@@ -726,6 +552,28 @@ export class GeneratingStrip {
 					}
 				}
 
+				let angle = 0.0;
+
+				if (assignment != "B") {
+					// Border edges always have a fold angle of 0 degrees
+
+					if (edgeIndex === 0) {
+						// [VERTICAL] Left edge, major fold angle
+						const major = this._generatingLine.majorFoldAngle(col);
+						angle = assignment === "M" ? -major : major;
+					} else if (edgeIndex === 1) {
+						// [HORIZONTAL] Bottom edge, minor fold angle
+						angle = assignment === "M" ? -Math.PI : Math.PI;
+					} else if (edgeIndex === 2) {
+						// [VERTICAL] Right edge, major fold angle
+						const major = this._generatingLine.majorFoldAngle(col + 1);
+						angle = assignment === "M" ? -major : major;
+					} else {
+						// [HORIZONTAL] Top edge, minor fold angle
+						angle = assignment === "M" ? -Math.PI : Math.PI;
+					}
+				}
+
 				// Add edge indices, modulo the number of indices in this face (4):
 				//
 				// (0, 1)
@@ -742,49 +590,45 @@ export class GeneratingStrip {
 				// duplicates later
 				edgeIndices.sort((a, b) => a - b);
 
-				this._edges.push(edgeIndices);
-				this._assignments.push(assignment);
+				const crease = {
+					edgeIndices: edgeIndices,
+					assignment: assignment,
+					angle: angle
+				};
+
+				edgeData.push(crease);
 			}
 		}
-	}
 
-	exportFoldData() {
-		// See: `https://github.com/edemaine/fold`
-		let fold = {
-			file_spec: 1,
-			file_creator: "SGMO Generator",
-			file_author: "SGMO",
-			file_classes: ["singleModel"],
-			frame_title: "A Procedurally Generated Semi-Generalized Miura-Ori",
-			frame_classes: ["foldedForm"],
-			frame_attributes: ["3D"],
-			vertices_coords: [],
-			edges_vertices: this._edges,
-			faces_vertices: this._faces,
-			edges_assignment: this._assignments,
-			edges_foldAngles: []
-		};
+		// edgeData = edgeData.filter((crease, index, caller) => {
+		//   index < caller.findIndex((t) => {
+		//    JSON.stringify(t.edgeIndices) === JSON.stringify(crease.edgeIndices) && ;
+		//   })
+		// });
 
-		// Vertices need to be reformatted
-		const scale = 1.0;
-		this._vertices.forEach(v =>
-			fold["vertices_coords"].push([
-				v.x * scale,
-				v.y * scale * 4.0,
-				v.z * scale
-			])
-		);
+		let unique = [];
 
-		this._assignments.forEach(a => {
-			if (a === "M") {
-				fold["edges_foldAngles"].push(-Math.PI);
-			} else if (a === "V") {
-				fold["edges_foldAngles"].push(Math.PI);
-			} else {
-				fold["edges_foldAngles"].push(0.0);
+		edgeData.forEach((first, indexA) => {
+			let found = edgeData.findIndex((second, indexB) => {
+				return (
+					JSON.stringify(second.edgeIndices) ===
+						JSON.stringify(first.edgeIndices) && indexA > indexB
+				);
+			});
+
+			if (found === -1) {
+				unique.push(first);
 			}
 		});
 
-		return fold;
+		edgeData = [...unique];
+
+		edgeData.forEach(c => {
+			creasePattern.edges.push(c["edgeIndices"]);
+			creasePattern.assignments.push(c["assignment"]);
+			creasePattern.angles.push(c["angle"]);
+		});
+
+		return creasePattern;
 	}
 }
