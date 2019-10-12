@@ -1,6 +1,6 @@
-import Vector from "./vector";
+import { Vector } from "./vector";
 
-const espilon = 0.001;
+const espilon = 0.1;
 
 export function boundingBox(vectors) {
 	let minX = 0.0;
@@ -83,4 +83,23 @@ export function convertHex(hex, opacity) {
 	const result = "rgba(" + r + "," + g + "," + b + "," + opacity / 100 + ")";
 
 	return result;
+}
+
+export function uniqueObjects(array, property) {
+	let unique = [];
+
+	array.forEach((a, indexA) => {
+		let found = array.findIndex((b, indexB) => {
+			return (
+				JSON.stringify(b[property]) === JSON.stringify(a[property]) &&
+				indexA > indexB
+			);
+		});
+
+		if (found === -1) {
+			unique.push(a);
+		}
+	});
+
+	return unique;
 }

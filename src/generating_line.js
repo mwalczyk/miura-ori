@@ -1,4 +1,4 @@
-import Vector from "./vector";
+import { Vector } from "./vector";
 import * as utils from "./utils";
 
 const colors = {

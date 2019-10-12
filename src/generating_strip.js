@@ -1,7 +1,5 @@
 import { CreasePattern } from "./crease_pattern";
-import { GeneratingLine } from "./generating_line";
-import Vector from "./vector";
-import Matrix from "./matrix";
+import { Vector } from "./vector";
 import * as utils from "./utils";
 
 const colors = {
@@ -199,10 +197,12 @@ export class GeneratingStrip {
 			// Draw outer / inner arcs with different radii
 			ctx.strokeStyle = lerpedColor;
 
+			ctx.lineWidth = 3.0;
 			ctx.beginPath();
 			ctx.arc(pointB.x, pointB.y, 16.0, startTheta, endTheta);
 			ctx.stroke();
 
+			ctx.lineWidth = 1.0;
 			ctx.beginPath();
 			ctx.arc(pointB.x, pointB.y, 20.0, 0.0, 2.0 * Math.PI);
 			ctx.stroke();
@@ -304,55 +304,23 @@ export class GeneratingStrip {
 		}
 	}
 
-	rearrangePolygon(a, b, c, d, currentOffset, flip, last) {
-		// First, gather the points that form this particular polygon
-		let rearrangedPoints = [
-			this._intersections[a],
-			this._intersections[b],
-			this._intersections[c],
-			this._intersections[d]
-		];
-
-		// A direction vector that runs parallel to this polygon's bottom edge
-		const bottomEdge = rearrangedPoints[2].subtract(rearrangedPoints[1]);
-		const topLeftCorner = rearrangedPoints[0].copy();
-
-		// Rotate the bottom edge to be aligned with the x-axis
-		const theta = bottomEdge.signedAngle(Vector.xAxis());
-		const rotationMatrix = Matrix.rotationZ(-theta);
-
-		for (let i = 0; i < rearrangedPoints.length; i++) {
-			// Rotate around the top-left corner of the polygon (the first point)
-			rearrangedPoints[i] = rotationMatrix.multiply(
-				rearrangedPoints[i].subtract(topLeftCorner)
-			);
-
-			// Flip across the x-axis and move down by the strip width
-			if (flip) {
-				rearrangedPoints[i].y = -rearrangedPoints[i].y;
-				rearrangedPoints[i].y -= this._stripWidth * 2.0;
-			}
-		}
-
-		return rearrangedPoints;
-	}
-
 	generateCreasePattern() {
 		let creasePattern = new CreasePattern();
 		let edgeData = [];
 
-		// "Flatten" the polygons that for the silhouette of the current strip
-		// The total number of closed polygons that form the silhouette of this strip
-		const numberOfPolygons = this._intersections.length / 2;
-		let cumulativeOffset = 0.0;
-		let flip = true;
+		// "Flatten" the polygons that form the silhouette of the current strip
+		const numberOfPolygons = (this._intersections.length - 2) / 2;
 
-		for (let i = 0; i < numberOfPolygons - 1; i++) {
+		let flip = true;
+		let offsetTop = 0.0;
+		let offsetBottom = 0.0;
+
+		for (let i = 0; i < numberOfPolygons; i++) {
 			// 2, 4, 6, 8, etc.
 			const startIndex = i * 2;
 
 			// Whether or not this is the last polygon in the strip
-			const last = i === numberOfPolygons - 2;
+			const last = i === numberOfPolygons - 1;
 
 			const [a, b, c, d] = [
 				startIndex + 0,
@@ -360,51 +328,50 @@ export class GeneratingStrip {
 				startIndex + 2,
 				startIndex + 3
 			];
-			// let rearrangedPoints = [
-			// 	this._intersections[a],
-			// 	this._intersections[b],
-			// 	this._intersections[c],
-			// 	this._intersections[d]
-		 //  ];
 
-			const lengthTopEdge = 
+			// Calculate the lengths of the top + bottom edges of the polygon
+			const lengthTopEdge = this._intersections[a]
+				.subtract(this._intersections[d])
+				.length();
+			const lengthBottomEdge = this._intersections[b]
+				.subtract(this._intersections[c])
+				.length();
 
-			let rearrangedPoints = this.rearrangePolygon(
-				a,
-				b,
-				c,
-				d,
-				cumulativeOffset,
-				flip,
-				last
-			);
-			// If this is the last polygon to be added, add all 4 points, otherwise only
-			// add the first two: we do this to avoid adding the same vertices multiple times
-			const toAdd = last ? 4 : 2;
+			// Two points on the left edge of the rearranged polygon
+			const rearrangedA = new Vector(offsetTop, this._stripWidth, 0.0);
+			const rearrangedB = new Vector(offsetBottom, 0.0, 0.0);
 
-			// Top right corner, after rotation (but before translation)
-			const offset = rearrangedPoints[2].x;
-
-			for (let i = 0; i < rearrangedPoints.length; i++) {
-				rearrangedPoints[i].x += cumulativeOffset;
+			if (flip) {
+				[lengthTopEdge, lengthBottomEdge] = [lengthBottomEdge, lengthTopEdge];
 			}
-			cumulativeOffset += offset;
 
-			creasePattern.vertices.push(...rearrangedPoints.slice(0, toAdd));
+			// Two points on the right edge of the rearranged polygon
+			const rearrangedC = new Vector(offsetBottom + lengthBottomEdge, 0.0, 0.0);
+			const rearrangedD = new Vector(
+				offsetTop + lengthTopEdge,
+				this._stripWidth,
+				0.0
+			);
 
-			// Add this face, taking care to note whether the polygon was flipped
+			// If this is the last polygon in the strip, add all four points - otherwise, only add the first two
+			if (last) {
+				creasePattern.vertices.push(
+					rearrangedA,
+					rearrangedB,
+					rearrangedD,
+					rearrangedC
+				);
+			} else {
+				creasePattern.vertices.push(rearrangedA, rearrangedB);
+			}
+			offsetTop += lengthTopEdge;
+			offsetBottom += lengthBottomEdge;
+
+			// Vertices will always be added in the order: <upperLeft, lowerLeft>
 			//
-			// Face vertices are assumed to have been added in the following order:
-			//
-			// 0--------3    1-----2
-			// |       /     |      \ <-- Faces that were flipped are like this, instead
-			// |      /      |       \
-			// 1-----2       0--------3
-			//
-			// So, reorient the flipped polygons here, ensuring the same CCW
-			// winding order <ul, ll, lr, ur>
-			const indices = flip ? [b, a, d, c] : [a, b, c, d];
-			creasePattern.faces.push(indices);
+			// So, when calculating face indices, we need to reorient the right edge, ensuring
+			// a consistent CCW winding order: <upperLeft, lowerLeft, *lowerRight, *upperRight>
+			creasePattern.faces.push([a, b, d, c]);
 
 			// The next polygon will need to be flipped, etc.
 			flip = !flip;
@@ -414,7 +381,7 @@ export class GeneratingStrip {
 		//
 		// Procedure:
 		//
-		// 1. Begin iterating over each of the pre-existing (quad) faces
+		// 1. Begin iterating over each of the pre-existing quadrilateral faces
 		// 2. For each face, grab the lower two vertices (lower left / lower right)
 		// 3. Reflect each of these vertices across the positive x-axis and add
 		//    them to the pre-existing list of vertices
@@ -422,6 +389,7 @@ export class GeneratingStrip {
 		//    corresponds to the new, reflected face
 		// 5. Concatenate the newly generated list of faces with the pre-existing
 		//    list of faces
+		// 6. Repeat
 		const numberOfReflections = this._repeat - 1;
 
 		let facesCurrent = [...creasePattern.faces];
@@ -439,7 +407,7 @@ export class GeneratingStrip {
 					creasePattern.vertices[lowerRight].copy()
 				];
 
-				const translateY = 4.0 * this._stripWidth;
+				const translateY = 2.0 * this._stripWidth;
 				vertexA.y += translateY;
 				vertexB.y += translateY;
 
@@ -600,33 +568,14 @@ export class GeneratingStrip {
 			}
 		}
 
-		// edgeData = edgeData.filter((crease, index, caller) => {
-		//   index < caller.findIndex((t) => {
-		//    JSON.stringify(t.edgeIndices) === JSON.stringify(crease.edgeIndices) && ;
-		//   })
-		// });
+		// Remove duplicate edges
+		edgeData = [...utils.uniqueObjects(edgeData, "edgeIndices")];
 
-		let unique = [];
-
-		edgeData.forEach((first, indexA) => {
-			let found = edgeData.findIndex((second, indexB) => {
-				return (
-					JSON.stringify(second.edgeIndices) ===
-						JSON.stringify(first.edgeIndices) && indexA > indexB
-				);
-			});
-
-			if (found === -1) {
-				unique.push(first);
-			}
-		});
-
-		edgeData = [...unique];
-
-		edgeData.forEach(c => {
-			creasePattern.edges.push(c["edgeIndices"]);
-			creasePattern.assignments.push(c["assignment"]);
-			creasePattern.angles.push(c["angle"]);
+		// Parse data into crease pattern
+		edgeData.forEach(data => {
+			creasePattern.edges.push(data["edgeIndices"]);
+			creasePattern.assignments.push(data["assignment"]);
+			creasePattern.angles.push(data["angle"]);
 		});
 
 		return creasePattern;

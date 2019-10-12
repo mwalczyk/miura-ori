@@ -1,6 +1,6 @@
-import Vector from "./vector";
+import { Vector } from "./vector";
 
-export default class Matrix {
+export class Matrix {
 	constructor(columnA, columnB, columnC) {
 		this.columnA = columnA;
 		this.columnB = columnB;

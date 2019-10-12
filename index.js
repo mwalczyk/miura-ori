@@ -2,7 +2,7 @@ import { saveAs } from "file-saver";
 
 import { GeneratingLine } from "./src/generating_line";
 import { GeneratingStrip } from "./src/generating_strip";
-import Vector from "./src/vector";
+import { Vector } from "./src/vector";
 
 // Running:
 //
