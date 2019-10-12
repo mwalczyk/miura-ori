@@ -20,8 +20,8 @@ Miura-ori are an interesting form of rigid origami initially discovered by Koryo
 The shape of the cross-section is called the **generating line** for the Miura-ori. It is a piecewise-linear path in 2-dimensional space (often referred to as a "polyline" in many graphics libraries). We start by expanding the generating line along a vector orthogonal to each of the constituent line segments. This forms the **generating strip**, which is essentially the silhouette of the final, folded form. In order to convert this strip into a rectangular crease pattern, we have to "unwind" it as follows:
 
 1. For each line segment of the generating line:
-    1. Calculate the equations of two lines that run parallel to this line segment: one to the "left" of the original segment, one to the "right," where "left" + "right" are directions orthogonal to the axis of the current line segment
-    2. Calculate the intersections between this pair of lines and the those constructed from the previous and next line segments in the generating line (i.e. the current line segment's "neighbors")
+    1. Calculate the equations of two lines that run parallel to this line segment (the light gray dotted lines in the screenshot above): one to the "left" of the original segment, one to the "right," where "left" + "right" are directions orthogonal to the axis of the current line segment
+    2. Calculate the points of intersection (the red dots in the screenshot above) between this pair of lines and the those constructed from the previous and next line segments in the generating line (i.e. the current line segment's "neighbors")
     3. These four points form a closed polygon (note that any of the interior polygons generated in this step will necessarily overlap with two neighboring polygons)
 2. For each of the polygons generated above:
     1. Rotate this polygon so that its bottom edge lies flat along the positive `x`-axis (the choice of axis here is arbitrary as long as we are consistent)
