@@ -32,8 +32,8 @@ The shape of the cross-section is called the **generating line** for the Miura-o
 The procedure outlined above generates the topology (i.e. geometric "structure") of the crease pattern, but it doesn't actually handle the assignment of the creases. Per `Chapter 2` of Lang's book, we will refer to creases running along the horizontal direction as **minor folds** and creases running along the vertical direction as **major folds**. Creases should be assigned as follows:
 - Minor folds alternate between mountain and valley folds as we traverse the crease pattern from left to right
 - Successive rows of the crease pattern start with opposite assignments (i.e. if the first row starts with a mountain fold, the next row would start with a valley fold, etc.)
-- Major folds are assignment so that the surrounding vertices are so-called "bird's-foot" vertices
-- All edges along the border of the crease pattern are marked as "border" edges, which do not have an assignment and do not fold
+- Major folds are assigned so that the surrounding vertices become "bird's-foot" vertices (explained below)
+- All edges along the border of the crease pattern are marked as "border" edges, which do not have an assignment or target fold angle
 
 Bird's-foot vertices are degree-4 vertices with 2 consecutive smallest sectors, where the shared crease between these two sectors is a mountain fold, and the other three creases are valley folds (or vice-versa). A single bird's-foot vertex is show in the crease pattern below:
 
@@ -42,7 +42,7 @@ Bird's-foot vertices are degree-4 vertices with 2 consecutive smallest sectors, 
 </p>
 
 ### Export
-Ultimately, the tool exports a .FOLD file, which contains a description of the vertices, edges, faces, crease assignments (mountain vs. valley fold, etc.), and target fold angles that form the resulting crease pattern. This file can then be loaded into a rigid origami simulator, such as [Amanda Ghassaei's](http://apps.amandaghassaei.com/OrigamiSimulator/), that will simulate the folding of the crease pattern in 3D space.
+Ultimately, the tool exports a .FOLD file, which contains a description of the vertices, edges, faces, crease assignments (mountain vs. valley fold, etc.), and target fold angles that form the resulting crease pattern. This file can then be loaded into a rigid origami simulator, such as [Amanda Ghassaei's](http://apps.amandaghassaei.com/OrigamiSimulator/), which simulates the folding of the crease pattern in 3D space. 
 
 ## Tested On
 - Firefox
