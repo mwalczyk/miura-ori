@@ -1,5 +1,7 @@
 import { saveAs } from "file-saver";
 
+import SVG from "svg.js";
+
 import { GeneratingLine } from "./src/generating_line";
 import { GeneratingStrip } from "./src/generating_strip";
 import { Vector } from "./src/vector";
@@ -18,6 +20,24 @@ import { Vector } from "./src/vector";
 //
 // 1. Install JsPrettier: `npm install --global prettier`
 // 2. Open the Sublime command palette and install the IDE integration
+
+
+// Set up global draw state
+// let draw = SVG("drawing").size(300, 300);
+
+// // This lets us access the variable `window.draw` in other scripts
+// window.draw = draw;
+
+// // Set up some SVG elements
+// const rect = draw.rect(100, 100).attr({ fill: "#b8b8c2" });
+// const circ = draw.circle(100).attr({ fill: "#a69ca4" });
+// const text = draw.text("Hello").font("family", "Courier New");
+
+// // Create class objects
+// let a = new Interactable(rect);
+// let b = new TextOverlay(circ, text);
+
+
 
 // Create canvas element and append it to document body
 const divCanvas = document.getElementById("div_canvas");
@@ -111,7 +131,7 @@ function drawCanvas() {
 
 	// Only do this if there are at least 2 points to draw
 	if (generatingLine.length() > 1) {
-		generatingStrip = new GeneratingStrip(generatingLine, 10.0, inputRepeat.value);
+		generatingStrip = new GeneratingStrip(generatingLine, 20.0, inputRepeat.value);
 		creasePattern = generatingStrip.generateCreasePattern();
 		
 		generatingStrip.draw(ctxDrawing);

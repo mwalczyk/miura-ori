@@ -55,5 +55,9 @@ export class Matrix {
 		return new Vector(x, y, z);
 	}
 
-	print() {}
+	print() {
+		console.log(`[${this.columnA.x} ${this.columnB.x} ${this.columnC.x}]`);
+		console.log(`[${this.columnA.y} ${this.columnB.y} ${this.columnC.y}]`);
+		console.log(`[${this.columnA.z} ${this.columnB.z} ${this.columnC.z}]`);
+	}
 }

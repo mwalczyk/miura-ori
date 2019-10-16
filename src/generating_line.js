@@ -44,8 +44,15 @@ export class GeneratingLine {
 			];
 			const theta = toAFromB.angle(toCFromB);
 
-			// The "height" + "width" of each shallow-angle divot
-			const [divotW, divotH] = [4.0, 20.0];
+			// The "height" + "width" of each shallow-angle divot: really, the divot should have
+			// a width of 0, but this causes issues
+			//
+			// If the width is 0, then there will be a pair of line segments that run parallel to
+			// one another in the generating line
+			// 
+			// The generating strip will try to find the intersection(s) between these parallel lines
+			// (there are none)
+			const [divotW, divotH] = [4.0, 40.0]; // The height should probably be a function of the strip width
 
 			if (theta > this._shallowAngle) {
 				// Add 3 points around `b` (the middle point): first, delete `b`
@@ -87,11 +94,11 @@ export class GeneratingLine {
 			this._points[index + 1]
 		];
 
-		const [toAFromB, toCFromB] = [
-			pointA.subtract(pointB).normalize(),
+		const [toBfromA, toCFromB] = [
+			pointB.subtract(pointA).normalize(),
 			pointC.subtract(pointB).normalize()
 		];
-		const theta = toAFromB.angle(toCFromB);
+		const theta = toBfromA.angle(toCFromB);
 
 		return theta;
 	}

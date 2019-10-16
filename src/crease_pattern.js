@@ -6,7 +6,8 @@ const colors = {
 		valley: "#768d87",
 		facet: "#c9ad47",
 		border: "#bab5b5"
-	}
+	},
+	text: "#344054"
 };
 
 /* A planar graph that represents the topology (connectedness) of an origami crease pattern */
@@ -24,7 +25,11 @@ export class Graph {
 	}
 }
 
-// Create procedural spiral tomoko fuse model
+// Ideas for other procedural patterns:
+// - Spira; shell Tomoko Fuse model
+// - Yoshimura 
+// - Waterbomb (or any tessellation, really)
+// - Regular twists
 
 /* A wrapper around the .FOLD file format */
 export class CreasePattern {
@@ -57,7 +62,7 @@ export class CreasePattern {
 		this.vertices.forEach(v =>
 			fold["vertices_coords"].push([
 				v.x * scale,
-				v.y * scale * 4.0,
+				v.y * scale * 1.0, // TODO: multiplying this by some constant factor (say, 4) seems to improve stability in the simulator
 				v.z * scale
 			])
 		);
@@ -66,7 +71,7 @@ export class CreasePattern {
 	}
 
 	draw(ctx) {
-		const offset = 10.0;//this._stripWidth;
+		const offset = 10.0;
 
 		// Shrink the crease pattern so that it fits on the canvas
 		let [minX, maxX, minY, maxY] = utils.boundingBox(this.vertices);
@@ -108,6 +113,16 @@ export class CreasePattern {
 			);
 			ctx.closePath();
 			ctx.stroke();
+
+			// Display fold angles as text
+			if (false) {
+				const spacing = 0;
+				ctx.font = "bold 10px Courier New";
+				ctx.fillStyle = colors["text"];
+				const avgX = (((this.vertices[a].x - minX) * scaleX + offset) + ((this.vertices[b].x - minX) * scaleX + offset)) * 0.5;
+				const avgY = (((this.vertices[a].y - minY) * scaleY + offset) + ((this.vertices[b].y - minY) * scaleY + offset)) * 0.5;
+				ctx.fillText(Math.trunc(utils.toDegrees(angle)).toString(), avgX, avgY);
+			}
 		});
 		ctx.restore();
 	}

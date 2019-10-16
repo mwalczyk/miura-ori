@@ -104,7 +104,7 @@ function drawCanvas() {
   clearCanvas(); // Only do this if there are at least 2 points to draw
 
   if (generatingLine.length() > 1) {
-    generatingStrip = new _generating_strip.GeneratingStrip(generatingLine, 10.0, inputRepeat.value);
+    generatingStrip = new _generating_strip.GeneratingStrip(generatingLine, 20.0, inputRepeat.value);
     creasePattern = generatingStrip.generateCreasePattern();
     generatingStrip.draw(ctxDrawing);
     creasePattern.draw(ctxCreasePattern);
@@ -154,7 +154,8 @@ var colors = {
     valley: "#768d87",
     facet: "#c9ad47",
     border: "#bab5b5"
-  }
+  },
+  text: "#344054"
 };
 /* A planar graph that represents the topology (connectedness) of an origami crease pattern */
 
@@ -178,7 +179,11 @@ function () {
   }]);
 
   return Graph;
-}(); // Create procedural spiral tomoko fuse model
+}(); // Ideas for other procedural patterns:
+// - Spira; shell Tomoko Fuse model
+// - Yoshimura 
+// - Waterbomb (or any tessellation, really)
+// - Regular twists
 
 /* A wrapper around the .FOLD file format */
 
@@ -219,7 +224,8 @@ function () {
       }; // Vertices need to be reformatted
 
       this.vertices.forEach(function (v) {
-        return fold["vertices_coords"].push([v.x * scale, v.y * scale * 4.0, v.z * scale]);
+        return fold["vertices_coords"].push([v.x * scale, v.y * scale * 1.0, // TODO: multiplying this by some constant factor (say, 4) seems to improve stability in the simulator
+        v.z * scale]);
       });
       return fold;
     }
@@ -228,8 +234,7 @@ function () {
     value: function draw(ctx) {
       var _this = this;
 
-      var offset = 10.0; //this._stripWidth;
-      // Shrink the crease pattern so that it fits on the canvas
+      var offset = 10.0; // Shrink the crease pattern so that it fits on the canvas
 
       var _utils$boundingBox = utils.boundingBox(this.vertices),
           _utils$boundingBox2 = _slicedToArray(_utils$boundingBox, 4),
@@ -274,7 +279,16 @@ function () {
         ctx.moveTo((_this.vertices[a].x - minX) * scaleX + offset, (_this.vertices[a].y - minY) * scaleY + offset);
         ctx.lineTo((_this.vertices[b].x - minX) * scaleX + offset, (_this.vertices[b].y - minY) * scaleY + offset);
         ctx.closePath();
-        ctx.stroke();
+        ctx.stroke(); // Display fold angles as text
+
+        if (false) {
+          var spacing = 0;
+          ctx.font = "bold 10px Courier New";
+          ctx.fillStyle = colors["text"];
+          var avgX = ((_this.vertices[a].x - minX) * scaleX + offset + ((_this.vertices[b].x - minX) * scaleX + offset)) * 0.5;
+          var avgY = ((_this.vertices[a].y - minY) * scaleY + offset + ((_this.vertices[b].y - minY) * scaleY + offset)) * 0.5;
+          ctx.fillText(Math.trunc(utils.toDegrees(angle)).toString(), avgX, avgY);
+        }
       });
       ctx.restore();
     }
@@ -351,10 +365,17 @@ function () {
         var _ref2 = [pointA.subtract(pointB).normalize(), pointC.subtract(pointB).normalize()],
             toAFromB = _ref2[0],
             toCFromB = _ref2[1];
-        var theta = toAFromB.angle(toCFromB); // The "height" + "width" of each shallow-angle divot
+        var theta = toAFromB.angle(toCFromB); // The "height" + "width" of each shallow-angle divot: really, the divot should have
+        // a width of 0, but this causes issues
+        //
+        // If the width is 0, then there will be a pair of line segments that run parallel to
+        // one another in the generating line
+        // 
+        // The generating strip will try to find the intersection(s) between these parallel lines
+        // (there are none)
 
         var divotW = 4.0,
-            divotH = 20.0;
+            divotH = 40.0; // The height should probably be a function of the strip width
 
         if (theta > this._shallowAngle) {
           // Add 3 points around `b` (the middle point): first, delete `b`
@@ -395,10 +416,10 @@ function () {
           pointA = _ref3[0],
           pointB = _ref3[1],
           pointC = _ref3[2];
-      var _ref4 = [pointA.subtract(pointB).normalize(), pointC.subtract(pointB).normalize()],
-          toAFromB = _ref4[0],
+      var _ref4 = [pointB.subtract(pointA).normalize(), pointC.subtract(pointB).normalize()],
+          toBfromA = _ref4[0],
           toCFromB = _ref4[1];
-      var theta = toAFromB.angle(toCFromB);
+      var theta = toBfromA.angle(toCFromB);
       return theta;
     }
   }, {
