@@ -1,4 +1,4 @@
-# cp
+# miura-ori
 📜 A tool for generating semigeneralized Miura-ori crease patterns.
 
 <p align="center">
@@ -7,7 +7,7 @@
 
 ## Description
 ### Background
-A drawing tool that creates [Miura-ori crease patterns](https://en.wikipedia.org/wiki/Miura_fold) from an arbitrary, user-defined cross-section. You can try it out at the [following URL](https://mwalczyk.github.io/cp/).
+A drawing tool that creates [Miura-ori crease patterns](https://en.wikipedia.org/wiki/Miura_fold) from an arbitrary, user-defined cross-section. You can try it out at the [following URL](https://mwalczyk.github.io/miura-ori/).
 
 Miura-ori are an interesting form of rigid origami initially discovered by Koryo Miura. They are "rigid" in the sense that they can transition smoothly from an unfolded state to a folded state without any bending or shearing of the parallelogram faces. They were even used by the Japanese space program to build deployable solar panel arrays! A "semigeneralized" Miura-ori (a term coined by Robert Lang, I believe) is a Miura-ori with an arbitrary cross-section. From Lang's book:
 
@@ -32,8 +32,8 @@ The shape of the cross-section is called the **generating line** for the Miura-o
 The procedure outlined above generates the topology (i.e. geometric "structure") of the crease pattern, but it doesn't actually handle the assignment of the creases. Per `Chapter 2` of Lang's book, we will refer to creases running along the horizontal direction as **minor folds** and creases running along the vertical direction as **major folds**. Creases should be assigned as follows:
 - Minor folds alternate between mountain and valley folds as we traverse the crease pattern from left to right
 - Successive rows of the crease pattern start with opposite assignments (i.e. if the first row starts with a mountain fold, the next row would start with a valley fold, etc.)
-- Major folds are assignment so that the surrounding vertices are so-called "bird's-foot" vertices
-- All edges along the border of the crease pattern are marked as "border" edges, which do not have an assignment and do not fold
+- Major folds are assigned so that the surrounding vertices become "bird's-foot" vertices (explained below)
+- All edges along the border of the crease pattern are marked as "border" edges, which do not have an assignment or target fold angle
 
 Bird's-foot vertices are degree-4 vertices with 2 consecutive smallest sectors, where the shared crease between these two sectors is a mountain fold, and the other three creases are valley folds (or vice-versa). A single bird's-foot vertex is show in the crease pattern below:
 
@@ -42,14 +42,14 @@ Bird's-foot vertices are degree-4 vertices with 2 consecutive smallest sectors, 
 </p>
 
 ### Export
-Ultimately, the tool exports a .FOLD file, which contains a description of the vertices, edges, faces, crease assignments (mountain vs. valley fold, etc.), and target fold angles that form the resulting crease pattern. This file can then be loaded into a rigid origami simulator, such as [Amanda Ghassaei's](http://apps.amandaghassaei.com/OrigamiSimulator/), that will simulate the folding of the crease pattern in 3D space.
+Ultimately, the tool exports a .FOLD file, which contains a description of the vertices, edges, faces, crease assignments (mountain vs. valley fold, etc.), and target fold angles that form the resulting crease pattern. This file can then be loaded into a rigid origami simulator, such as [Amanda Ghassaei's](http://apps.amandaghassaei.com/OrigamiSimulator/), which simulates the folding of the crease pattern in 3D space. 
 
 ## Tested On
 - Firefox
 
 ## To Build
 1. Clone this repo.
-2. Make sure [npm](https://www.npmjs.com/) is installed and in your `PATH`: to bundle the included scripts, you will also need to ensure that `browserify` is installed.
+2. Make sure [npm](https://www.npmjs.com/) is installed and in your `PATH`: to bundle the included scripts, you will also need to ensure that `browserify` and `watchify` are installed.
 3. Inside the repo, run: `npm install` to install dependencies.
 4. Finally, run: `npm run bundle`.
 5. Open `index.html` in your browser.
@@ -61,13 +61,14 @@ Use your mouse to add points in the upper canvas. The points will be connected t
 - Adjust the `repetitions` slider to change the number of times that the crease pattern is repeated vertically (this corresponds to the "width" of your paper, while the horizontal axis corresponds to the "length")
 
 ## To Do
-- [ ] Allow for an adjustable strip width
-- [ ] Calculate the shallow angle based on the strip width
-- [ ] Create a clean, reusable `CreasePattern` module
-- [ ] Add additional methods to the `Matrix` module
+- [ ] Make the user-generated path editable (probably would need to look into some form of SVG rendering)
+- [ ] Create a slider that adjusts the strip width
+- [ ] Calculate the shallow angle based on the strip width (currently, this is hard-coded)
+- [ ] Create a `Generator` base class, from which `GeneratingStrip` inherits
+- [ ] Test on Explorer, Chrome, and Safari
 
 ## Credits
-This project was largely inspired by Robert Lang's book, [Twists, Tilings, and Tessellations](https://langorigami.com/publication/twists-tilings-and-tessellations-mathematical-methods-for-geometric-origami/), which outlines the theoretical / mathematical implications of semigeneralized Miura-ori crease patterns (see `Chapter 2`).
+This project was largely inspired by Robert Lang's book, [Twists, Tilings, and Tessellations](https://langorigami.com/publication/twists-tilings-and-tessellations-mathematical-methods-for-geometric-origami/), which outlines the theoretical / mathematical implications of semigeneralized Miura-ori crease patterns (see `Chapter 2`). The [.FOLD file format](https://github.com/edemaine/fold) is maintained by Erik Demaine and colleagues.
 
 ### License
 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/)
