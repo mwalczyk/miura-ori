@@ -1762,15 +1762,11 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 //
 // 1. Install JsPrettier: `npm install --global prettier`
 // 2. Open the Sublime command palette and install the IDE integration
-var app = new PIXI.Application({
-  width: 600,
-  height: 600,
-  antialias: true,
-  backgroundColor: 0x1099bb
-});
-document.body.appendChild(app.view);
-window.app = app; // Create canvas element and append it to document body
-
+// const app = new PIXI.Application({ width: 600, height: 600, antialias: true, backgroundColor: 0x1099bb });
+// document.body.appendChild(app.view);
+// window.app = app;
+// Needs a div like: `<div id="drawing"></div>`
+// Create canvas element and append it to document body
 var divCanvas = document.getElementById("div_canvas");
 var canvasDrawing = document.createElement("canvas");
 canvasDrawing.setAttribute("id", "canvas_drawing");
