@@ -1,6 +1,3 @@
-import * as PIXI from 'pixi.js'
-
-import { Interactable } from "./interactable";
 import { Vector } from "./vector";
 import * as utils from "./utils";
 

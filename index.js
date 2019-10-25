@@ -1,5 +1,4 @@
 import { saveAs } from "file-saver";
-import * as PIXI from 'pixi.js'
 
 import { GeneratingLine } from "./src/generating_line";
 import { GeneratingStrip } from "./src/generating_strip";
@@ -19,11 +18,6 @@ import { Vector } from "./src/vector";
 //
 // 1. Install JsPrettier: `npm install --global prettier`
 // 2. Open the Sublime command palette and install the IDE integration
-
-// const app = new PIXI.Application({ width: 600, height: 600, antialias: true, backgroundColor: 0x1099bb });
-// document.body.appendChild(app.view);
-// window.app = app;
-// Needs a div like: `<div id="drawing"></div>`
 
 // Create canvas element and append it to document body
 const divCanvas = document.getElementById("div_canvas");
@@ -125,6 +119,5 @@ function drawCanvas() {
 	}
 
 	// Always draw the line on top
-	//generatingLine.draw(app);
 	generatingLine.draw(ctxDrawing);
 }

@@ -10,27 +10,6 @@ const colors = {
 	text: "#344054"
 };
 
-/* A planar graph that represents the topology (connectedness) of an origami crease pattern */
-export class Graph {
-	constructor() {
-
-	}
-
-	vertexDegree(index) {
-		return 4;
-	}
-
-	sectorAngles(index) {
-		return [];
-	}
-}
-
-// Ideas for other procedural patterns:
-// - Spira; shell Tomoko Fuse model
-// - Yoshimura 
-// - Waterbomb (or any tessellation, really)
-// - Regular twists
-
 /* A wrapper around the .FOLD file format */
 export class CreasePattern {
 	constructor() {
