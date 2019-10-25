@@ -1,97 +1,109 @@
-class Interactable {
+import * as PIXI from "pixi.js";
+
+export class Oberserver {
+	constructor() {
+		this.interactables = [];
+	}
+
+	onChange() {
+
+	}
+}
+
+export class Interactable {
 	/**
-	 * An SVG element that can be clicked (and moved if `moveable` is `true`).
+	 * A drawable object that the user can interact with.
 	 *
-	 * Example:
-	 * 
-	 * const base = window.draw.circle(10);
-	 * const interactable = new Interactable(base);
-	 * 
+	 * Reference: 
+	 * https://pixijs.io/examples/#/interaction/dragging.js
+	 * https://github.com/kittykatattack/learningPixi
+	 *
 	 */
-	constructor(svg, moveable = true) {
-		this.svg = svg; 
+	constructor(graphics, owner, moveable = true) {
+		this.graphics = graphics;
+		this.graphics.interactive = true;
+		this.graphics.buttonMode = true;
+		this.owner = owner;
 		this.moveable = moveable;
-		this.clicked = false;
 
-		// See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_objects/Function/bind
-		this.svg.mousedown(this.onMouseDown.bind(this));
-		this.svg.mouseup(this.onMouseUp.bind(this));
-		this.svg.mousemove(this.onMouseMove.bind(this));
-		this.svg.mouseout(this.onMouseOut.bind(this));
-	}
-
-	onMouseDown(e) {
-		this.clicked = true;
-
-		// Always move this element to the front of the canvas (to avoid 
-		// weird overlap conditions)
-		this.svg.front(); 
-	}
-
-	onMouseUp(e) {
-		this.clicked = false;
-	}
-
-	onMouseMove(e) {
-		if (this.moveable && this.clicked) {
-			this.svg.center(e.clientX, e.clientY);
+		if (this.moveable) {
+			this.graphics
+				.on("pointerdown", this.onMouseDown.bind(this))
+				.on("pointerup", this.onMouseUp.bind(this))
+				.on("pointerupoutside", this.onMouseOut.bind(this))
+				.on("pointermove", this.onMouseMove.bind(this));
 		}
 	}
 
-	onMouseOut(e) {
+	onMouseDown(event) {
+		this.graphics.data = event.data;
+		this.graphics.alpha = 0.5;
+		this.graphics.dragging = true;
+	}
+
+	onMouseUp(event) {
+		this.graphics.alpha = 1;
+		this.graphics.dragging = false;
+		this.graphics.data = null;
+	}
+
+	onMouseMove(event) {
+		if (this.graphics.dragging) {
+			const newPosition = this.graphics.data.getLocalPosition(this.graphics.parent);
+			this.graphics.x = newPosition.x;
+			this.graphics.y = newPosition.y;
+		}
+	}
+
+	onMouseOut(event) {
 		// Currently unused: left here as a placeholder for child classes
 	}
-}
 
-class TextOverlay extends Interactable {
-	/**
-	 * An SVG element that displays some text when it is clicked.
-	 * 
-	 * Example:
-	 * 
-	 * const base = window.draw.circle(10);
-	 * const text = window.draw.text("My Circle");
-	 * const overlay = new TextOverlay(base, text);
-	 * 
-	 */  
-	constructor(base, text, moveable = true) {
-		super(base, moveable);
-		this.text = text;
-		this.text.before(this.svg);
-		this.text.hide();
-
-		this.align();
-	}
-
-	onMouseDown(e) {
-		super.onMouseDown(e);
-
-		this.text.show();
-		this.text.front();
-	}
-
-	onMouseUp(e) {
-		super.onMouseUp(e);
-
-		this.text.hide();
-	}
-
-	onMouseMove(e) {
-		super.onMouseMove(e);
-
-		if (this.moveable && this.clicked) {
-			this.align();
-		}
-	}
-
-	onMouseOut(e) {
-		super.onMouseOut(e);
-
-		this.text.hide();
-	}
-
-	align() {
-		// Draw the text above the parent SVG
-		this.text.center(this.svg.cx(), this.svg.cy() - this.svg.height() * 0.5);
+	draw() {
+		// The PIXI application needs to be in the global scope
+		window.app.stage.addChild(this.graphics);
 	}
 }
+
+// export class TextOverlay extends Interactable {
+// 	constructor(base, text, moveable = true) {
+// 		super(base, moveable);
+// 		this.text = text;
+
+// 		this.align();
+// 	}
+
+// 	onMouseDown(e) {
+// 		super.onMouseDown(e);
+
+// 		this.text.show();
+// 	}
+
+// 	onMouseUp(e) {
+// 		super.onMouseUp(e);
+
+// 		this.text.hide();
+// 	}
+
+// 	onMouseMove(e) {
+// 		super.onMouseMove(e);
+
+// 		if (this.moveable && this.clicked) {
+// 			this.align();
+// 		}
+// 	}
+
+// 	onMouseOut(e) {
+// 		super.onMouseOut(e);
+
+// 		this.text.hide();
+// 	}
+
+// 	align() {
+// 		// Draw the text above the parent SVG
+// 		this.text.center(
+// 			this.svg.cx(),
+// 			this.svg.cy() - this.svg.height() * 0.5
+// 		);
+// 	}
+// }

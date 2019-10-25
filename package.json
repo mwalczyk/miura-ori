@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "build-bundle": "^2.0.8",
-    "file-saver": "^2.0.2"
+    "file-saver": "^2.0.2",
+    "pixi.js": "^5.1.5"
   }
 }

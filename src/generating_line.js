@@ -1,3 +1,6 @@
+import * as PIXI from 'pixi.js'
+
+import { Interactable } from "./interactable";
 import { Vector } from "./vector";
 import * as utils from "./utils";
 
@@ -12,6 +15,8 @@ export class GeneratingLine {
 		this._points = [];
 		this._shallowAngle = utils.toRadians(150.0);
 		this._checkShallowAngle = true;
+
+		this._interactables = [];
 	}
 
 	get points() {
@@ -73,6 +78,8 @@ export class GeneratingLine {
 		}
 
 		this._points.push(point);
+		
+		//this.update();
 	}
 
 	pop() {
@@ -103,6 +110,38 @@ export class GeneratingLine {
 		return theta;
 	}
 
+	update() {
+		
+		console.log(this.interactables);
+
+		this._points.forEach(point => {
+			let g = new PIXI.Graphics();
+			g.beginFill(0xFF0000);
+			g.drawCircle(0.0, 0.0, 15.0);
+			g.endFill();
+			g.x = point.x;
+			g.y = point.y;
+			let i = new Interactable(g);
+			this.interactables.push(i);
+		});
+
+		// if (this._points.length > 1) {
+
+		// 	for (let i = 0; i < this._points.length - 1; i++) {
+		// 		const [pointA, pointB] = this._points.slice(i, i + 2);
+		// 		console.log(pointA);
+
+		// 		let g = new PIXI.Graphics();
+		// 		g.lineStyle(4, 0xFFFFFF, 1);	
+		// 		g.moveTo(pointA.x, pointA.y);
+		// 		g.lineTo(pointB.x, pointB.y);
+		// 		let i = new Interactable(g);
+		// 		this.interactables.push(i);
+		// 	}
+
+		// }
+	}
+
 	draw(ctx) {
 		ctx.save();
 		for (let i = 0; i < this._points.length - 1; i++) {
@@ -127,4 +166,10 @@ export class GeneratingLine {
 		}
 		ctx.restore();
 	}
+
+	// draw() {
+		
+	// 	this.interactables.forEach(item => item.draw());
+
+	// }
 }
