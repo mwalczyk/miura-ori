@@ -1,8 +1,8 @@
-# miura-ori
+# Miura-Ori
 📜 A tool for generating semigeneralized Miura-ori crease patterns.
 
 <p align="center">
-  <img src="https://github.com/mwalczyk/cp/blob/master/screenshots/screenshot.png" alt="screenshot" width="400" height="auto"/>
+  <img src="https://raw.githubusercontent.com/mwalczyk/cp/master/screenshots/screenshot.png" alt="screenshot" width="400" height="auto"/>
 </p>
 
 ## Description
@@ -38,7 +38,7 @@ The procedure outlined above generates the topology (i.e. geometric "structure")
 Bird's-foot vertices are degree-4 vertices with 2 consecutive smallest sectors, where the shared crease between these two sectors is a mountain fold, and the other three creases are valley folds (or vice-versa). A single bird's-foot vertex is show in the crease pattern below:
 
 <p align="center">
-  <img src="https://github.com/mwalczyk/cp/blob/master/screenshots/birds_foot_vertex.png" alt="screenshot" width="200" height="auto"/>
+  <img src="https://raw.githubusercontent.com/mwalczyk/cp/master/screenshots/birds_foot_vertex.png" alt="screenshot" width="200" height="auto"/>
 </p>
 
 ### Export
